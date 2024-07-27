@@ -1,0 +1,51 @@
+name: 'gha-ci-issues'
+description: 'Upload JUnit XML report to Mergify CI Issues'
+author: 'Mergify'
+branding:
+  icon: 'at-sign'
+  color: 'blue'
+inputs:
+  token:
+    required: true
+    description: 'CI Issues Application Key'
+  report_paths:
+    required: true
+    description: 'Paths of the files to upload'
+  mergify_api_server:
+    required: false
+    description: 'URL of the Mergify API'
+    default: https://api.mergify.com/v1
+  name:
+    description: name of the current workflow job
+runs:
+  using: 'composite'
+  steps:
+    - shell: bash
+      env:
+        MERGIFY_API_SERVER: ${{ inputs.mergify_api_server }}
+        MERGIFY_CI_ISSUES_TOKEN: ${{ inputs.token }}
+        FILES: ${{ inputs.report_paths }}
+        REPOSITORY: ${{ github.repository }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        WORKFLOW_JOB_NAME: ${{ inputs.name || github.job }}
+      run: |
+        set -x
+
+        # TODO(sileht): support multiple files
+        curl -X POST \
+          -H "Authorization: bearer ${MERGIFY_CI_ISSUES_TOKEN}" \
+          -F name=${WORKFLOW_JOB_NAME} \
+          -F provider=github_action |
+          -F head_sha=${HEAD_SHA} \
+          -F files=@${FILES} \
+          -o result.json \
+          ${MERGIFY_API_SERVER}/repos/${REPOSITORY}/ci_issues_upload \
+
+        GIGID=$(cat result.json | jq -r .gigid)
+
+        echo "::notice title=CI Issues report::CI_ISSUE_GIGID=$GIGID"
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ci-issues-junit-report
+        path: ${{ inputs.report_paths }}
+ 
