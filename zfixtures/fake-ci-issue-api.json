@@ -1,16 +1,24 @@
 [
-  {
-    "httpRequest": {
-      "method": "POST",
-      "path": "/repos/Mergifyio/gha-ci-issues/ci_issues_upload",
-      "headers": {"Authorization": "bearer fake-valid-token"}
-    },
-    "httpResponse": {
-      "statusCode": 200,
-      "body": "{\"gigid\": \"1234azertyuiop\"}",
-      "headers": {
-        "Content-Type": ["application/json"]
-      }
+    {
+        "httpRequest": {
+            "method": "POST",
+            "path": "/repos/Mergifyio/gha-ci-issues/ci_issues_upload",
+            "headers": {
+                "Authorization": "bearer fake-valid-token"
+            },
+            "body": {
+                "type": "REGEX",
+                "regex": ".*name=test.*provider=github_action"
+            }
+        },
+        "httpResponse": {
+            "statusCode": 200,
+            "body": "{\"gigid\": \"1234azertyuiop\"}",
+            "headers": {
+                "Content-Type": [
+                    "application/json"
+                ]
+            }
+        }
     }
-  },
 ]
