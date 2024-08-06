@@ -35,7 +35,7 @@ runs:
         curl -X POST \
           -H "Authorization: bearer ${MERGIFY_CI_ISSUES_TOKEN}" \
           -F name=${WORKFLOW_JOB_NAME} \
-          -F provider=github_action |
+          -F provider=github_action \
           -F head_sha=${HEAD_SHA} \
           -F files=@${FILES} \
           -o result.json \
