@@ -41,14 +41,17 @@ jobs:
           yamllint .
           ${{ steps.get_actionlint.outputs.executable }} -color
 
-  local-action:
+  test:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v4.1.7
-      - name:
-        run: docker compose up -d
+      - name: Prepare mock server
+        run: |
+          docker compose up -d
+          sleep 1
+          docker compose logs
       - name: Run action 🔍
         id: gigid
         uses: ./
