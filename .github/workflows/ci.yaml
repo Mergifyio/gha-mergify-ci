@@ -12,7 +12,7 @@ on:
 
 concurrency:
   # yamllint disable-line rule:line-length
-  group: "${{ github.workflow }}-${{ github.head_ref || github.run_id }}"
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
@@ -55,4 +55,3 @@ jobs:
           token: fake-valid-token
           report_paths: zfixtures/junit_example.xml
           mergify_api_server: http://localhost:1080
-

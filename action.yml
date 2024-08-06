@@ -1,24 +1,24 @@
-name: 'gha-ci-issues'
-description: 'Upload JUnit XML report to Mergify CI Issues'
-author: 'Mergify'
+name: gha-ci-issues
+description: Upload JUnit XML report to Mergify CI Issues
+author: Mergify
 branding:
-  icon: 'at-sign'
-  color: 'blue'
+  icon: at-sign
+  color: blue
 inputs:
   token:
     required: true
-    description: 'CI Issues Application Key'
+    description: CI Issues Application Key
   report_paths:
     required: true
-    description: 'Paths of the files to upload'
+    description: Paths of the files to upload
   mergify_api_server:
     required: false
-    description: 'URL of the Mergify API'
+    description: URL of the Mergify API
     default: https://api.mergify.com/v1
   name:
     description: name of the current workflow job
 runs:
-  using: 'composite'
+  using: composite
   steps:
     - shell: bash
       env:
@@ -48,4 +48,3 @@ runs:
       with:
         name: ci-issues-junit-report
         path: ${{ inputs.report_paths }}
- 
