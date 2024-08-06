@@ -67,5 +67,6 @@ jobs:
           test "$CI_ISSUE_GIGID" = "1234azertyuiop"
 
       - name: Dump mockserver logs
+        if: always()
         run: |
           docker compose logs
