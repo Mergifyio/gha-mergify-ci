@@ -16,11 +16,16 @@ inputs:
     description: URL of the Mergify API
     default: https://api.mergify.com/v1
   name:
-    description: name of the current workflow job
+    description: Name of the current workflow job
+outputs:
+  GIGID:
+    description: Mergify CI Issues GIGID
+    value: ${{ steps.gigid.outputs.GIGID }}
 runs:
   using: composite
   steps:
     - shell: bash
+      id: gigid
       env:
         MERGIFY_API_SERVER: ${{ inputs.mergify_api_server }}
         MERGIFY_CI_ISSUES_TOKEN: ${{ inputs.token }}
