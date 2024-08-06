@@ -1,0 +1,9 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+      # yamllint disable-line rule:quoted-strings
+      time: "08:00"
+      timezone: Europe/Paris

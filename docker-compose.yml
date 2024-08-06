@@ -1,0 +1,12 @@
+services:
+  mockServer:
+    image: mockserver/mockserver:5.15.0
+    command: -logLevel DEBUG
+    ports:
+      - 1080:1080
+    environment:
+      MOCKSERVER_INITIALIZATION_JSON_PATH: /config/fake-ci-issue-api.json
+    volumes:
+      - type: bind
+        source: zfixtures
+        target: /config
