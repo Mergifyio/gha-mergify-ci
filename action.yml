@@ -18,7 +18,7 @@ inputs:
   name:
     description: Name of the current workflow job
 outputs:
-  GIGID:
+  CI_ISSUE_GIGID:
     description: Mergify CI Issues CI_ISSUE_GIGID
     value: ${{ steps.gigid.outputs.CI_ISSUE_GIGID }}
 runs:
