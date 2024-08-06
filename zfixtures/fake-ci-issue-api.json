@@ -8,7 +8,7 @@
             },
             "body": {
                 "type": "REGEX",
-                "regex": ".*name=test.*provider=github_action"
+                "regex": ".*Content-Disposition: form-data; name=\"name\"\r\n\r\ntest\r\n.*Content-Disposition: form-data; name=\"provider\"\r\n\r\ngithub_action\r\n.*Content-Disposition: form-data; name=\"files\"; filename=\"junit_example.xml\"\r\nContent-Type: application/xml\r\n\r\n.*"
             }
         },
         "httpResponse": {
