@@ -52,7 +52,7 @@ jobs:
       - name: Run action 🔍
         uses: ./
         with:
-          mergify_api_server: http://localhost:1080
           token: "fake-valid-token"
-          reports-path: zfixtures/junit_example.xml
+          report_paths: "zfixtures/junit_example.xml"
+          mergify_api_server: "http://localhost:1080"
 
