@@ -1,0 +1,133 @@
+extends: .github
+shared:
+  IsPublicHolidays: &IsPublicHolidays
+    or:
+      - current-datetime = XXXX-01-01T00:00/XXXX-01-01T23:59[Europe/Paris]
+      - current-datetime = XXXX-05-01T00:00/XXXX-05-01T23:59[Europe/Paris]
+      - current-datetime = XXXX-05-08T00:00/XXXX-05-08T23:59[Europe/Paris]
+      - current-datetime = XXXX-07-14T00:00/XXXX-07-14T23:59[Europe/Paris]
+      - current-datetime = XXXX-08-15T00:00/XXXX-08-15T23:59[Europe/Paris]
+      - current-datetime = XXXX-11-01T00:00/XXXX-11-01T23:59[Europe/Paris]
+      - current-datetime = XXXX-11-11T00:00/XXXX-11-11T23:59[Europe/Paris]
+      - current-datetime = XXXX-12-25T00:00/XXXX-12-25T23:59[Europe/Paris]
+  DefaultQueueOptions: &DefaultQueueOptions
+    commit_message_template: |
+      {{ title }} (#{{ number }})
+
+      {{ body }}
+    allow_inplace_checks: true
+    merge_method: squash
+    speculative_checks: 5
+  CheckRuns: &CheckRuns
+    - check-success=linters
+    - check-success=test
+
+queue_rules:
+  - name: hotfix
+    <<: *DefaultQueueOptions
+    queue_conditions:
+      - "check-success=Rule: testing requirements (post_check)"
+      - or: &HotfixReviewCond
+          # Author is engineering manager, we allow with one review
+          - and:
+              - author=@eng-mgr
+              - "#approved-reviews-by>=1"
+          - and:
+              - author=@devs
+              # in any other case, we allow if approve by engineering manager
+              # or anyone if it's a regular fix/revert
+              - or:
+                  - approved-reviews-by=@eng-mgr
+                  - and:
+                      - title~=^(revert|fix)
+                      - "#approved-reviews-by>=1"
+      - label=hotfix
+      - "#changes-requested-reviews-by=0"
+      - "#review-threads-unresolved=0"
+      - "#review-requested=0"
+    merge_conditions:
+      - and: *CheckRuns
+
+  - name: default
+    <<: *DefaultQueueOptions
+    queue_conditions:
+      - and: *CheckRuns
+      - "check-success=Rule: feature requirements (post_check)"
+      - "check-success=Rule: testing requirements (post_check)"
+      - or: &DefaultReviewCond
+          - "#approved-reviews-by>=2"
+          - and:
+              - author=mergify-ci-bot
+              - head=trivy/daily-report
+              - approved-reviews-by=@eng-mgr
+      - "#changes-requested-reviews-by=0"
+      - "#review-threads-unresolved=0"
+      - "#review-requested=0"
+    merge_conditions:
+      - and: *CheckRuns
+      - and:
+          - not: *IsPublicHolidays
+          - schedule=Mon-Fri 09:00-17:30[Europe/Paris]
+
+  - name: lowprio
+    <<: *DefaultQueueOptions
+    queue_conditions:
+      - and: *CheckRuns
+      - "#commits=1"
+      - or:
+          - and:
+              - author=mergify-ci-bot
+              - head~=^clifus/
+              - "title~=^chore: bump"
+          - and:
+              - author=mergify-ci-bot
+              - head=trivy/daily-report
+              - label!=new CVE
+          - and:
+              - author=mergify-ci-bot
+              - head=openapi-spec-sync
+          - author=dependabot[bot]
+    merge_method: merge
+    merge_conditions:
+      - and: *CheckRuns
+      - and:
+          - not: *IsPublicHolidays
+          - schedule=Mon-Fri 09:00-17:00[Europe/Paris]
+    speculative_checks: 1
+    batch_size: 7
+    batch_max_wait_time: 5min
+    commit_message_template: null
+    queue_branch_merge_method: fast-forward
+    disallow_checks_interruption_from_queues:
+      - default
+
+pull_request_rules:
+  - name: automatic merge
+    conditions:
+      - base=main
+      - label!=manual merge
+    actions:
+      queue:
+
+  - name: request review
+    conditions:
+      - -author=dependabot[bot]
+      - -author=mergify-ci-bot
+      - -merged
+      - -closed
+      - and: *CheckRuns
+      - "check-success=Rule: feature requirements (post_check)"
+      - "check-success=Rule: testing requirements (post_check)"
+      - "#changes-requested-reviews-by=0"
+      - review-requested!=@devs
+      - and:
+          - or:
+              - label!=hotfix
+              - not:
+                  or: *HotfixReviewCond
+          - not:
+              or: *DefaultReviewCond
+    actions:
+      request_reviews:
+        teams:
+          - devs
