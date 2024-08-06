@@ -61,7 +61,7 @@ jobs:
           mergify_api_server: http://localhost:1080
       - name: Check GIGID
         env:
-          GIGID: ${{steps.gigid.outputs.GIGID}}
+          CI_ISSUE_GIGID: ${{steps.gigid.outputs.CI_ISSUE_GIGID}}
         run: |
           set -e
-          test "$GIGID" = "1234azertyuiop"
+          test "$CI_ISSUE_GIGID" = "1234azertyuiop"

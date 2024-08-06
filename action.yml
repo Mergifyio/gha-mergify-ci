@@ -19,8 +19,8 @@ inputs:
     description: Name of the current workflow job
 outputs:
   GIGID:
-    description: Mergify CI Issues GIGID
-    value: ${{ steps.gigid.outputs.GIGID }}
+    description: Mergify CI Issues CI_ISSUE_GIGID
+    value: ${{ steps.gigid.outputs.CI_ISSUE_GIGID }}
 runs:
   using: composite
   steps:
