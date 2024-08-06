@@ -5,10 +5,6 @@ on:
   pull_request:
     branches:
       - main
-  # TODO(sileht): delete me, here just for CI setup
-  push:
-    branches:
-      - main
 
 concurrency:
   # yamllint disable-line rule:line-length
