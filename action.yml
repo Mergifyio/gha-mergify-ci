@@ -44,7 +44,4 @@ runs:
         GIGID=$(cat result.json | jq -r .gigid)
 
         echo "::notice title=CI Issues report::CI_ISSUE_GIGID=$GIGID"
-    - uses: actions/upload-artifact@v4
-      with:
-        name: ci-issues-junit-report
-        path: ${{ inputs.report_paths }}
+        echo "CI_ISSUE_GIGID=$GIGID" >> "$GITHUB_OUTPUT"

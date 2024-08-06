@@ -50,8 +50,15 @@ jobs:
       - name:
         run: docker compose up -d
       - name: Run action 🔍
+        id: action
         uses: ./
         with:
           token: fake-valid-token
           report_paths: zfixtures/junit_example.xml
           mergify_api_server: http://localhost:1080
+      - name: Check GIGID
+        env:
+          GIGID: ${{needs.action.outputs.GIGID}}
+        run: |
+          set -e
+          test "$GIGID" = "1234azertyuiop"
