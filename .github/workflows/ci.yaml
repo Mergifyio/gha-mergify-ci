@@ -47,7 +47,7 @@ jobs:
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v4.1.7
-      - name: Prepare mock server
+      - name: Prepare mockserver
         run: |
           docker compose up -d
           sleep 1
@@ -65,3 +65,7 @@ jobs:
         run: |
           set -e
           test "$CI_ISSUE_GIGID" = "1234azertyuiop"
+
+      - name: Dump mockserver logs
+        run: |
+          docker compose logs
