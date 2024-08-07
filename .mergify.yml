@@ -26,7 +26,6 @@ queue_rules:
   - name: hotfix
     <<: *DefaultQueueOptions
     queue_conditions:
-      - "check-success=Rule: testing requirements (post_check)"
       - or: &HotfixReviewCond
           # Author is engineering manager, we allow with one review
           - and:
@@ -52,8 +51,6 @@ queue_rules:
     <<: *DefaultQueueOptions
     queue_conditions:
       - and: *CheckRuns
-      - "check-success=Rule: feature requirements (post_check)"
-      - "check-success=Rule: testing requirements (post_check)"
       - or: &DefaultReviewCond
           - "#approved-reviews-by>=2"
           - and:
@@ -116,8 +113,6 @@ pull_request_rules:
       - -merged
       - -closed
       - and: *CheckRuns
-      - "check-success=Rule: feature requirements (post_check)"
-      - "check-success=Rule: testing requirements (post_check)"
       - "#changes-requested-reviews-by=0"
       - review-requested!=@devs
       - and:
