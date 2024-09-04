@@ -47,8 +47,11 @@ runs:
           exit 1
         fi
 
+        set +e
+
         # TODO(sileht): support multiple files
         curl -X POST \
+          --fail \
           -H "Authorization: bearer ${MERGIFY_CI_ISSUES_TOKEN}" \
           -F name=${WORKFLOW_JOB_NAME} \
           -F provider=github_action \
@@ -56,6 +59,14 @@ runs:
           -F files=@${FILES} \
           -o result.json \
           ${MERGIFY_API_SERVER}/repos/${REPOSITORY}/ci_issues_upload
+
+        if [ $? = 22 ]; then
+           echo "Upload failed"
+           test -f result.json && cat result.json
+           exit 22
+        fi
+
+        set -e
 
         GIGID=$(jq -r .gigid result.json)
 

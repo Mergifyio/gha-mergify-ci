@@ -63,6 +63,24 @@ jobs:
           set -e
           test "$CI_ISSUE_GIGID" = "1234azertyuiop"
 
+      - name: Clear result file
+        run: rm result.json
+
+      - name: Run action with error scenario ❌
+        id: error500
+        continue-on-error: true
+        uses: ./
+        with:
+          token: fake-valid-token
+          report_paths: zfixtures/junit_example.xml
+          mergify_api_server: http://localhost:1085
+
+      - name: Check error was reported
+        if: ${{ steps.error500.outcome == 'success' }}
+        run: |
+          echo "Error succeeded, that's not correct."
+          exit 1
+
       - name: Dump mockserver logs
         if: always()
         run: |
