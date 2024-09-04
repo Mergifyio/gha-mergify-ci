@@ -57,7 +57,7 @@ runs:
           -o result.json \
           ${MERGIFY_API_SERVER}/repos/${REPOSITORY}/ci_issues_upload \
 
-        GIGID=$(cat result.json | jq -r .gigid)
+        GIGID=$(jq -r .gigid result.json)
 
         echo "::notice title=CI Issues report::CI_ISSUE_GIGID=$GIGID"
         echo "CI_ISSUE_GIGID=$GIGID" >> "$GITHUB_OUTPUT"
