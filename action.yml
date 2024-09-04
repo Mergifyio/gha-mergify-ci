@@ -55,7 +55,7 @@ runs:
           -F head_sha=${HEAD_SHA} \
           -F files=@${FILES} \
           -o result.json \
-          ${MERGIFY_API_SERVER}/repos/${REPOSITORY}/ci_issues_upload \
+          ${MERGIFY_API_SERVER}/repos/${REPOSITORY}/ci_issues_upload
 
         GIGID=$(jq -r .gigid result.json)
 
