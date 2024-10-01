@@ -52,6 +52,7 @@ runs:
         # TODO(sileht): support multiple files
         curl -X POST \
           --fail \
+          -v \
           -H "Authorization: bearer ${MERGIFY_CI_ISSUES_TOKEN}" \
           -F name=${WORKFLOW_JOB_NAME} \
           -F provider=github_action \
