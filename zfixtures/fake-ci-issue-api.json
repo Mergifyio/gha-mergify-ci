@@ -2,13 +2,13 @@
     {
         "httpRequest": {
             "method": "POST",
-            "path": "/repos/Mergifyio/gha-ci-issues/ci_issues_upload",
+            "path": "/v1/repos/Mergifyio/gha-ci-issues/ci_issues_upload",
             "headers": {
-                "Authorization": "bearer fake-valid-token"
+                "Authorization": "Bearer fake-valid-token"
             },
             "body": {
                 "type": "REGEX",
-                "regex": ".*Content-Disposition: form-data; name=\"name\"\r\n\r\ntest\r\n.*Content-Disposition: form-data; name=\"provider\"\r\n\r\ngithub_action\r\n.*Content-Disposition: form-data; name=\"files\"; filename=\"junit_example.xml\"\r\nContent-Type: application/xml\r\n\r\n.*"
+                "regex": ".*Content-Disposition: form-data; name=\\\"head_sha\\\"\\r\\n\\r\\n.*\\r\\n.*\\r\\nContent-Disposition: form-data; name=\"name\"\r\n\r\nContinuous Integration\r\n.*Content-Disposition: form-data; name=\"provider\"\r\n\r\ngithub_action\r\n.*Content-Disposition: form-data; name=\"files\"; filename=\"junit_example.xml\"\r\nContent-Type: application/xml\r\n\r\n.*"
             }
         },
         "httpResponse": {

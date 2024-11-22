@@ -11,60 +11,29 @@ inputs:
   report_paths:
     required: true
     description: Paths of the files to upload
-  mergify_api_server:
+  mergify_api_url:
     required: false
     description: URL of the Mergify API
-    default: https://api.mergify.com/v1
-  name:
-    description: Name of the current workflow job
+    default: https://api.mergify.com
 runs:
   using: composite
   steps:
+    - name: Setup Python 🔧
+      uses: actions/setup-python@v5.3.0
+      with:
+        python-version: 3.12.7
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install mergify-cli
+
     - shell: bash
       id: gigid
       env:
-        MERGIFY_API_SERVER: ${{ inputs.mergify_api_server }}
-        MERGIFY_CI_ISSUES_TOKEN: ${{ inputs.token }}
+        MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
+        MERGIFY_TOKEN: ${{ inputs.token }}
         FILES: ${{ inputs.report_paths }}
-        REPOSITORY: ${{ github.repository }}
-        HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        WORKFLOW_JOB_NAME: ${{ inputs.name || github.job }}
       run: |
-        set -x
-
-        # Check if FILES and MERGIFY_CI_ISSUES_TOKEN are set and not empty
-        if [ -z "$FILES" ]; then
-          echo "::error:: report_paths is not set or is empty"
-          exit 1
-        fi
-
-        if [ -z "$MERGIFY_CI_ISSUES_TOKEN" ]; then
-          echo "::error:: token is not set or is empty"
-          exit 1
-        fi
-
-        set +e
-
-        # TODO(sileht): support multiple files
-        curl -X POST \
-          --fail \
-          -v \
-          -H "Authorization: bearer ${MERGIFY_CI_ISSUES_TOKEN}" \
-          -F name=${WORKFLOW_JOB_NAME} \
-          -F provider=github_action \
-          -F head_sha=${HEAD_SHA} \
-          -F files=@${FILES} \
-          -o result.json \
-          ${MERGIFY_API_SERVER}/repos/${REPOSITORY}/ci_issues_upload
-
-        if [ $? = 22 ]; then
-           echo "Upload failed"
-           test -f result.json && cat result.json
-           exit 22
-        fi
-
-        set -e
-
-        GIGID=$(jq -r .gigid result.json)
-
-        echo "::notice title=CI Issues report::CI_ISSUE_GIGID=$GIGID"
+        set -x -e
+        mergify ci junit-upload "${FILES}"
