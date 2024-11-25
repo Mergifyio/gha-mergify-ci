@@ -17,10 +17,6 @@ inputs:
     default: https://api.mergify.com/v1
   name:
     description: Name of the current workflow job
-outputs:
-  CI_ISSUE_GIGID:
-    description: Mergify CI Issues CI_ISSUE_GIGID
-    value: ${{ steps.gigid.outputs.CI_ISSUE_GIGID }}
 runs:
   using: composite
   steps:
@@ -72,4 +68,3 @@ runs:
         GIGID=$(jq -r .gigid result.json)
 
         echo "::notice title=CI Issues report::CI_ISSUE_GIGID=$GIGID"
-        echo "CI_ISSUE_GIGID=$GIGID" >> "$GITHUB_OUTPUT"
