@@ -41,6 +41,8 @@ jobs:
   test:
     timeout-minutes: 5
     runs-on: ubuntu-latest
+    outputs:
+      job_id: ${{ steps.get-job-id.outputs.job_id }}
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v4.2.2
@@ -49,19 +51,31 @@ jobs:
           docker compose up -d
           sleep 1
           docker compose logs
-      - name: Run action 🔍
-        id: gigid
+      - name: Run action
         uses: ./
         with:
           token: fake-valid-token
           report_paths: zfixtures/junit_example.xml
           mergify_api_server: http://localhost:1080
-      - name: Check GIGID
-        env:
-          CI_ISSUE_GIGID: ${{steps.gigid.outputs.CI_ISSUE_GIGID}}
-        run: |
-          set -e
-          test "$CI_ISSUE_GIGID" = "1234azertyuiop"
+
+      - name: Get job ID
+        id: get-job-id
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data } = await github.rest.actions.listJobsForWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId
+            });
+            // Looks for exact match
+            let job = data.jobs.find(
+              (j) => j.name === context.job
+            )
+            if (!job) {
+              core.error("current job not found");
+            }
+            core.setOutput("job_id", String(job.id));
 
       - name: Clear result file
         run: rm result.json
@@ -85,3 +99,26 @@ jobs:
         if: always()
         run: |
           docker compose logs
+
+  test-annotations:
+    needs: test
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check GIGID
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const annotations = await github.rest.checks.listAnnotations({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              check_run_id: ${{ needs.test.outputs.job_id }},
+            });
+            for (const annotation of annotations.data) {
+              if (annotation.message === "CI_ISSUE_GIGID=1234azertyuiop") {
+                core.info(`Annotations found: ${annotation.message}`)
+                return
+              }
+            }
+            console.log(annotations)
+            throw new Error("Annotations not found")
