@@ -56,7 +56,7 @@ jobs:
         with:
           token: fake-valid-token
           report_paths: zfixtures/junit_example.xml
-          mergify_api_server: http://localhost:1080
+          mergify_api_url: http://localhost:1080
 
       - name: Get job ID
         id: get-job-id
@@ -77,9 +77,6 @@ jobs:
             }
             core.setOutput("job_id", String(job.id));
 
-      - name: Clear result file
-        run: rm result.json
-
       - name: Run action with error scenario ❌
         id: error500
         continue-on-error: true
@@ -87,7 +84,7 @@ jobs:
         with:
           token: fake-valid-token
           report_paths: zfixtures/junit_example.xml
-          mergify_api_server: http://localhost:1085
+          mergify_api_url: http://localhost:1085
 
       - name: Check error was reported
         if: ${{ steps.error500.outcome == 'success' }}
