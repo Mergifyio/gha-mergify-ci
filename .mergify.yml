@@ -17,7 +17,6 @@ shared:
       {{ body }}
     allow_inplace_checks: true
     merge_method: squash
-    speculative_checks: 5
   CheckRuns: &CheckRuns
     - check-success=linters
     - check-success=test
@@ -91,10 +90,9 @@ queue_rules:
       - and:
           - not: *IsPublicHolidays
           - schedule=Mon-Fri 09:00-17:00[Europe/Paris]
-    speculative_checks: 1
     batch_size: 7
     batch_max_wait_time: 5min
-    commit_message_template: null
+    commit_message_template:
     queue_branch_merge_method: fast-forward
     disallow_checks_interruption_from_queues:
       - default
@@ -127,3 +125,6 @@ pull_request_rules:
       request_reviews:
         teams:
           - devs
+
+merge_queue:
+  max_parallel_checks: 5
