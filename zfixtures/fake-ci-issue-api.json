@@ -2,7 +2,7 @@
     {
         "httpRequest": {
             "method": "POST",
-            "path": "/v1/repos/Mergifyio/gha-ci-issues/ci_issues_upload",
+            "path": "/v1/repos/Mergifyio/gha-mergify-ci/ci_issues_upload",
             "headers": {
                 "Authorization": "Bearer fake-valid-token"
             },
