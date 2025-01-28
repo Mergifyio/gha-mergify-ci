@@ -1,5 +1,5 @@
-# gha-ci-issues
+# gha-mergify-ci
 
-GitHub Action to automatically uploads JUnit XML reports to Mergify CI Issues.
+GitHub Action to automatically uploads JUnit XML reports to Mergify CI Insights.
 
 More information on https://mergify.com
