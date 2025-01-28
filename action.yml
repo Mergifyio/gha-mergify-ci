@@ -1,5 +1,5 @@
 name: gha-ci-issues
-description: Upload JUnit XML report to Mergify CI Issues
+description: Upload JUnit XML report to Mergify CI Insights
 author: Mergify
 branding:
   icon: at-sign
@@ -7,7 +7,7 @@ branding:
 inputs:
   token:
     required: true
-    description: CI Issues Application Key
+    description: Mergify CI token
   report_paths:
     required: true
     description: Paths of the files to upload
