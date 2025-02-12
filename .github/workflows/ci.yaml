@@ -55,7 +55,7 @@ jobs:
         uses: ./
         with:
           token: fake-valid-token
-          report_paths: zfixtures/junit_example.xml
+          report_path: zfixtures/*.xml
           mergify_api_url: http://localhost:1080
 
       - name: Get job ID
@@ -83,7 +83,7 @@ jobs:
         uses: ./
         with:
           token: fake-valid-token
-          report_paths: zfixtures/junit_example.xml
+          report_path: zfixtures/junit_example.xml
           mergify_api_url: http://localhost:1085
 
       - name: Dump mockserver logs
