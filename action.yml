@@ -29,7 +29,7 @@ runs:
         pip install mergify-cli
 
     - shell: bash
-      id: gigid
+      id: junit-upload
       env:
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
         MERGIFY_TOKEN: ${{ inputs.token }}
