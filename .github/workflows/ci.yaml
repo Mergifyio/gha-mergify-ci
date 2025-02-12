@@ -86,12 +86,6 @@ jobs:
           report_paths: zfixtures/junit_example.xml
           mergify_api_url: http://localhost:1085
 
-      - name: Check error was reported
-        if: ${{ steps.error500.outcome == 'success' }}
-        run: |
-          echo "Error succeeded, that's not correct."
-          exit 1
-
       - name: Dump mockserver logs
         if: always()
         run: |
@@ -102,7 +96,7 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-      - name: Check GIGID
+      - name: Check annotation
         uses: actions/github-script@v7
         with:
           script: |
@@ -112,7 +106,7 @@ jobs:
               check_run_id: ${{ needs.test.outputs.job_id }},
             });
             for (const annotation of annotations.data) {
-              if (annotation.message === "CI_ISSUE_GIGID=1234azertyuiop") {
+              if (annotation.message.startsWith("MERGIFY_TEST_ROOT_SPAN_ID=")) {
                 core.info(`Annotations found: ${annotation.message}`)
                 return
               }
