@@ -2,23 +2,13 @@
     {
         "httpRequest": {
             "method": "POST",
-            "path": "/v1/repos/Mergifyio/gha-mergify-ci/ci_issues_upload",
+            "path": "/v1/repos/Mergifyio/gha-mergify-ci/ci/traces",
             "headers": {
                 "Authorization": "Bearer fake-valid-token"
             },
-            "body": {
-                "type": "REGEX",
-                "regex": ".*Content-Disposition: form-data; name=\\\"head_sha\\\"\\r\\n\\r\\n.*\\r\\n.*\\r\\nContent-Disposition: form-data; name=\"name\"\r\n\r\nContinuous Integration\r\n.*Content-Disposition: form-data; name=\"provider\"\r\n\r\ngithub_action\r\n.*Content-Disposition: form-data; name=\"files\"; filename=\"junit_example.xml\"\r\nContent-Type: application/xml\r\n\r\n.*"
-            }
         },
         "httpResponse": {
             "statusCode": 200,
-            "body": "{\"gigid\": \"1234azertyuiop\"}",
-            "headers": {
-                "Content-Type": [
-                    "application/json"
-                ]
-            }
         }
     }
 ]
