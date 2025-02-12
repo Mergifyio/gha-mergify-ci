@@ -8,9 +8,9 @@ inputs:
   token:
     required: true
     description: Mergify CI token
-  report_paths:
+  report_path:
     required: true
-    description: Paths of the files to upload
+    description: Path of the files to upload
   mergify_api_url:
     required: false
     description: URL of the Mergify API
@@ -33,7 +33,7 @@ runs:
       env:
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
         MERGIFY_TOKEN: ${{ inputs.token }}
-        FILES: ${{ inputs.report_paths }}
+        FILES: ${{ inputs.report_path }}
       run: |
         set -x -e
-        mergify ci junit-upload "${FILES}"
+        mergify ci junit-upload ${FILES}
