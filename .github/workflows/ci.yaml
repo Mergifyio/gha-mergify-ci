@@ -106,7 +106,7 @@ jobs:
               check_run_id: ${{ needs.test.outputs.job_id }},
             });
             for (const annotation of annotations.data) {
-              if (annotation.message.startsWith("MERGIFY_TEST_ROOT_SPAN_ID=")) {
+              if (annotation.message.startsWith("MERGIFY_TEST_RUN_ID=")) {
                 core.info(`Annotations found: ${annotation.message}`)
                 return
               }
