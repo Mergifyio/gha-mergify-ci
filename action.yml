@@ -21,7 +21,7 @@ runs:
     - name: Setup Python 🔧
       uses: actions/setup-python@v5.4.0
       with:
-        python-version: 3.12.7
+        python-version: "3.13"
 
     - name: Install dependencies
       shell: bash
