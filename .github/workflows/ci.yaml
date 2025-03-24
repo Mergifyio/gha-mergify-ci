@@ -31,12 +31,14 @@ jobs:
         run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.7.1
 
       - name: Test 🔍
+        env:
+          ACTIONLINT: ${{ steps.get_actionlint.outputs.executable }}
         run: |
           # nosemgrep: generic.ci.security.use-frozen-lockfile.use-frozen-lockfile-pip
           pip install semgrep yamllint
           semgrep --config=auto --error
           yamllint .
-          ${{ steps.get_actionlint.outputs.executable }} -color
+          $ACTIONLINT -color
 
   test:
     timeout-minutes: 5
