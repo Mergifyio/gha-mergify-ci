@@ -19,7 +19,7 @@ runs:
   using: composite
   steps:
     - name: Setup Python 🔧
-      uses: actions/setup-python@v5.4.0
+      uses: actions/setup-python@v5.5.0
       with:
         python-version: "3.13"
 
