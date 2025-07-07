@@ -8,6 +8,10 @@ inputs:
   token:
     required: true
     description: Mergify CI token
+  job_name:
+    description: |
+      Override the job name, must be used in case of matrix job to avoid
+      having the same name for all jobs
   report_path:
     required: true
     description: Path of the files to upload
@@ -33,6 +37,7 @@ runs:
       env:
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
         MERGIFY_TOKEN: ${{ inputs.token }}
+        MERGIFY_JOB_NAME: ${{ inputs.job_name }}
         FILES: ${{ inputs.report_path }}
       run: |
         set -x -e
