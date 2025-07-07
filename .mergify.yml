@@ -20,7 +20,6 @@ shared:
   CheckRuns: &CheckRuns
     - check-success=linters
     - check-success=test
-    - check-success=test-annotations
 
 queue_rules:
   - name: hotfix
