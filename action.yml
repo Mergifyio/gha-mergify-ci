@@ -19,6 +19,11 @@ inputs:
     required: false
     description: URL of the Mergify API
     default: https://api.mergify.com
+  quarantine_check:
+    description: Whether or not to use CI Insights Quarantine checks on failing tests inside the JUnit files
+    required: false
+    default: false
+
 runs:
   using: composite
   steps:
@@ -39,6 +44,7 @@ runs:
         MERGIFY_TOKEN: ${{ inputs.token }}
         MERGIFY_JOB_NAME: ${{ inputs.job_name }}
         FILES: ${{ inputs.report_path }}
+        MERGIFY_QUARANTINE: ${{ inputs.quarantine_check }}
       run: |
         set -x -e
         mergify ci junit-upload ${FILES}
