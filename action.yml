@@ -30,7 +30,7 @@ runs:
     - name: Install dependencies
       shell: bash
       run: |
-        pip install mergify-cli
+        pip install "mergify-cli>=2025.7.23.1"
 
     - shell: bash
       id: junit-upload
@@ -41,4 +41,4 @@ runs:
         FILES: ${{ inputs.report_path }}
       run: |
         set -x -e
-        mergify ci junit-upload ${FILES}
+        mergify ci junit-process ${FILES}
