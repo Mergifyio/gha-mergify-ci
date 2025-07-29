@@ -33,7 +33,7 @@ runs:
         pip install mergify-cli
 
     - shell: bash
-      id: junit-upload
+      id: junit-process
       env:
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
         MERGIFY_TOKEN: ${{ inputs.token }}
@@ -41,4 +41,4 @@ runs:
         FILES: ${{ inputs.report_path }}
       run: |
         set -x -e
-        mergify ci junit-upload ${FILES}
+        mergify ci junit-process ${FILES}
