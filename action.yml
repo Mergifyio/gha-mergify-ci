@@ -30,7 +30,7 @@ runs:
     - name: Install dependencies
       shell: bash
       run: |
-        pip install mergify-cli
+        pip install "mergify-cli==2025.7.29.1"
 
     - shell: bash
       id: junit-process
