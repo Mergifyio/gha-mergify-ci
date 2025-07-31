@@ -5,10 +5,30 @@
             "path": "/v1/repos/Mergifyio/gha-mergify-ci/ci/traces",
             "headers": {
                 "Authorization": "Bearer fake-valid-token"
-            },
+            }
+        },
+        "httpResponse": {
+            "statusCode": 200
+        }
+    },
+    {
+        "httpRequest": {
+            "method": "POST",
+            "path": "/v1/ci/Mergifyio/repositories/gha-mergify-ci/quarantines/check",
+            "headers": {
+                "Authorization": "Bearer fake-valid-token"
+            }
         },
         "httpResponse": {
             "statusCode": 200,
+            "body": {
+                "quarantined_tests_names": [
+                    "Tests.Registration.testCase3",
+                    "Tests.Authentication.testCase9",
+                    "Tests.Permission.testCase10"
+                ],
+                "non_quarantined_tests_names": []
+            }
         }
     }
 ]
