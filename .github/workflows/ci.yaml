@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout 🛎️
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5.0.0
 
       - name: Setup Python 🔧
         uses: actions/setup-python@v5.6.0
@@ -47,7 +47,7 @@ jobs:
       job_id: ${{ steps.get-job-id.outputs.job_id }}
     steps:
       - name: Checkout 🛎️
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5.0.0
       - name: Prepare mockserver
         run: |
           docker compose up -d
