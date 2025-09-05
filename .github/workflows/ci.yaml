@@ -62,7 +62,7 @@ jobs:
 
       - name: Get job ID
         id: get-job-id
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const { data } = await github.rest.actions.listJobsForWorkflowRun({
