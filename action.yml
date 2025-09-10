@@ -19,6 +19,10 @@ inputs:
     required: false
     description: URL of the Mergify API
     default: https://api.mergify.com
+  flaky_test_detection:
+    required: false
+    description: Mark test execution as part of a flaky test detection process
+    default: "false"
 runs:
   using: composite
   steps:
@@ -36,6 +40,7 @@ runs:
       id: junit-process
       env:
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
+        MERGIFY_TEST_FLAKY_DETECTION: ${{ inputs.flaky_test_detection }}
         MERGIFY_TOKEN: ${{ inputs.token }}
         MERGIFY_JOB_NAME: ${{ inputs.job_name }}
         FILES: ${{ inputs.report_path }}
