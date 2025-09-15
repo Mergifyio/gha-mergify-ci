@@ -28,7 +28,7 @@ jobs:
       - name: Download actionlint
         id: get_actionlint
         # yamllint disable-line rule:line-length
-        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.7.1
+        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.7.7
 
       - name: Test 🔍
         env:
@@ -42,9 +42,11 @@ jobs:
 
   test:
     timeout-minutes: 5
-    runs-on: ubuntu-latest
-    outputs:
-      job_id: ${{ steps.get-job-id.outputs.job_id }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v5.0.0
@@ -53,31 +55,13 @@ jobs:
           docker compose up -d
           sleep 1
           docker compose logs
+
       - name: Run action
         uses: ./
         with:
           token: fake-valid-token
           report_path: zfixtures/*.xml
           mergify_api_url: http://localhost:1080
-
-      - name: Get job ID
-        id: get-job-id
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const { data } = await github.rest.actions.listJobsForWorkflowRun({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: context.runId
-            });
-            // Looks for exact match
-            let job = data.jobs.find(
-              (j) => j.name === context.job
-            )
-            if (!job) {
-              core.error("current job not found");
-            }
-            core.setOutput("job_id", String(job.id));
 
       - name: Run action with error scenario ❌
         id: error500

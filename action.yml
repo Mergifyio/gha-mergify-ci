@@ -34,7 +34,8 @@ runs:
     - name: Install dependencies
       shell: bash
       run: |
-        pip install mergify-cli
+        # pip install mergify-cli
+        pip install git+https://github.com/Mergifyio/mergify-cli@devs/sileht/ci-fixes/Ib8db94a2562e627bf87592a78479856b4baacd40#egg=mergify-cli
 
     - shell: bash
       id: junit-process
