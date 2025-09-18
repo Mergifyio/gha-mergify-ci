@@ -43,8 +43,6 @@ jobs:
   test:
     timeout-minutes: 5
     runs-on: ubuntu-latest
-    outputs:
-      job_id: ${{ steps.get-job-id.outputs.job_id }}
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v5.0.0
@@ -59,25 +57,6 @@ jobs:
           token: fake-valid-token
           report_path: zfixtures/*.xml
           mergify_api_url: http://localhost:1080
-
-      - name: Get job ID
-        id: get-job-id
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const { data } = await github.rest.actions.listJobsForWorkflowRun({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: context.runId
-            });
-            // Looks for exact match
-            let job = data.jobs.find(
-              (j) => j.name === context.job
-            )
-            if (!job) {
-              core.error("current job not found");
-            }
-            core.setOutput("job_id", String(job.id));
 
       - name: Run action with error scenario ❌
         id: error500
