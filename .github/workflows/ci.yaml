@@ -25,20 +25,17 @@ jobs:
         with:
           python-version: 3.12.4
 
-      - name: Download actionlint
-        id: get_actionlint
-        # yamllint disable-line rule:line-length
-        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.7.1
+      - name: Check workflow files
+        uses: docker://rhysd/actionlint:1.7.7
+        with:
+          args: -color
 
       - name: Test 🔍
-        env:
-          ACTIONLINT: ${{ steps.get_actionlint.outputs.executable }}
         run: |
           # nosemgrep: generic.ci.security.use-frozen-lockfile.use-frozen-lockfile-pip
           pip install semgrep yamllint
           semgrep --config=auto --error
           yamllint .
-          $ACTIONLINT -color
 
   test:
     timeout-minutes: 5
