@@ -37,7 +37,29 @@ jobs:
           semgrep --config=auto --error
           yamllint .
 
-  test:
+  test-scope:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v5.0.0
+
+      - name: Trying action
+        id: scopes-detection
+        uses: ./
+        with:
+          action: scopes
+
+      - name: Check scopes
+        env:
+          SCOPES: ${{ steps.scopes-detection.outputs.scopes }}
+          EVERYTHING: ${{ fromJSON(steps.scopes-detection.outputs.scopes).everything }}
+          EVERYTHING_BOOL: ${{ fromJSON(steps.scopes-detection.outputs.scopes).everything == 'true' }}
+        run: |
+          echo "SCOPES: $SCOPES"
+          test "$EVERYTHING" == "true"
+          test "$EVERYTHING_BOOL" == "true"
+
+  test-junit:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -48,9 +70,11 @@ jobs:
           docker compose up -d
           sleep 1
           docker compose logs
+
       - name: Run action
         uses: ./
         with:
+          action: junit-process
           token: fake-valid-token
           report_path: zfixtures/*.xml
           mergify_api_url: http://localhost:1080
@@ -60,6 +84,7 @@ jobs:
         continue-on-error: true
         uses: ./
         with:
+          action: junit-process
           token: fake-valid-token
           report_path: zfixtures/junit_example.xml
           mergify_api_url: http://localhost:1085
