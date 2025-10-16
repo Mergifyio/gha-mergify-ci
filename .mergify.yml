@@ -19,7 +19,15 @@ shared:
     merge_method: squash
   CheckRuns: &CheckRuns
     - check-success=linters
-    - check-success=test
+    - check-success=test-junit
+    - check-success=test-scopes
+
+
+scopes:
+  source:
+    files:
+      # Used by .github/workflow/ci.yml to test the action
+      everything: {}
 
 queue_rules:
   - name: hotfix

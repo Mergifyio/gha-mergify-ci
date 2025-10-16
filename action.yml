@@ -1,28 +1,35 @@
-name: gha-ci-issues
-description: Upload JUnit XML report to Mergify CI Insights
+name: gha-mergify-ci
+description: The Mergify CI integration with GitHub Actions
 author: Mergify
 branding:
   icon: at-sign
   color: blue
 inputs:
+  action:
+    description: |
+      The Mergify CI action:
+      * junit-process: process Junit XML files with Mergify CI Insights (Upload and Quarantine)
+      * scopes: detect and upload pull requests scopes to Mergify Merge Queue
+    # Backward compat
+    default: junit-process
   token:
-    required: true
     description: Mergify CI token
+  mergify_api_url:
+    description: URL of the Mergify API
+    default: https://api.mergify.com
   job_name:
     description: |
       Override the job name, must be used in case of matrix job to avoid
       having the same name for all jobs
   report_path:
-    required: true
     description: Path of the files to upload
-  mergify_api_url:
-    required: false
-    description: URL of the Mergify API
-    default: https://api.mergify.com
   flaky_test_detection:
-    required: false
     description: Mark test execution as part of a flaky test detection process
     default: "false"
+outputs:
+  scopes:
+    description: stringified JSON mapping with names of all scopes matching any of changed files
+    value: ${{ steps.scopes-detection.outputs.scopes }}
 runs:
   using: composite
   steps:
@@ -38,6 +45,7 @@ runs:
 
     - shell: bash
       id: junit-process
+      if: inputs.action == 'junit-process'
       env:
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
         MERGIFY_TEST_FLAKY_DETECTION: ${{ inputs.flaky_test_detection }}
@@ -47,3 +55,17 @@ runs:
       run: |
         set -x -e
         mergify ci junit-process ${FILES}
+
+    - name: Detect scopes
+      if: inputs.action == 'scopes'
+      id: scopes-detection
+      shell: bash
+      run: mergify ci scopes --write $RUNNER_TEMP/mergify-scopes.json
+
+    - name: Upload scopes to Mergify API
+      shell: bash
+      if: inputs.token && inputs.action == 'scopes'
+      env:
+        MERGIFY_TOKEN: ${{ inputs.token }}
+        MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
+      run: mergify ci scopes-send --file $RUNNER_TEMP/mergify-scopes.json
