@@ -10,6 +10,7 @@ inputs:
       The Mergify CI action:
       * junit-process: process Junit XML files with Mergify CI Insights (Upload and Quarantine)
       * scopes: detect and upload pull requests scopes to Mergify Merge Queue
+      * wait-jobs: wait for specified jobs to complete before proceeding
     # Backward compat
     default: junit-process
   token:
@@ -26,6 +27,8 @@ inputs:
   flaky_test_detection:
     description: Mark test execution as part of a flaky test detection process
     default: "false"
+  jobs:
+    description: List of jobs to wait for completion
 outputs:
   scopes:
     description: stringified JSON mapping with names of all scopes matching any of changed files
@@ -33,6 +36,16 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Inputs checks
+      shell: bash
+      if: ${{ inputs.action != 'junit-process' && inputs.action != 'scopes' && inputs.action != 'wait-jobs' }}
+      env:
+        ACTION: ${{ inputs.action }}
+      run: |
+        echo "Unsupported action: $ACTION"
+        echo "Valid actions are: junit-process, scopes, wait-jobs"
+        exit 1
+
     - name: Setup Python 🔧
       uses: actions/setup-python@v6.0.0
       with:
@@ -69,3 +82,10 @@ runs:
         MERGIFY_TOKEN: ${{ inputs.token }}
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
       run: mergify ci scopes-send --file $RUNNER_TEMP/mergify-scopes.json
+
+    - name: Wait jobs
+      if: inputs.action == 'wait-jobs'
+      uses: re-actors/alls-green@release/v1
+      with:
+        allowed-skips: ${{ inputs.jobs }}
+        jobs: ${{ inputs.jobs }}
