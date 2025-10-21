@@ -37,7 +37,7 @@ jobs:
           semgrep --config=auto --error
           yamllint .
 
-  test-scope:
+  test-scopes:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout 🛎️
