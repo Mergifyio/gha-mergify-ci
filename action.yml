@@ -8,7 +8,7 @@ inputs:
   action:
     description: |
       The Mergify CI action:
-      * junit-process: process Junit XML files with Mergify CI Insights (Upload and Quarantine)
+      * junit-process: process JUnit XML files with Mergify CI Insights (Upload and Quarantine)
       * scopes: detect and upload pull requests scopes to Mergify Merge Queue
       * wait-jobs: wait for specified jobs to complete before proceeding
     # Backward compat
