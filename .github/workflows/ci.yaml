@@ -48,6 +48,7 @@ jobs:
         uses: ./
         with:
           action: scopes
+          token: ${{ secrets.MERGIFY_TOKEN }}
 
       - name: Check scopes
         env:
@@ -93,3 +94,18 @@ jobs:
         if: always()
         run: |
           docker compose logs
+
+  test-wait-jobs:
+    needs: [test-junit, test-scopes, linters]
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v5.0.0
+
+      - name: Trying action
+        id: scopes-detection
+        uses: ./
+        with:
+          action: wait-jobs
+          jobs: ${{ toJSON(needs) }}
