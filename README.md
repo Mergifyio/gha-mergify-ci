@@ -10,14 +10,46 @@ More information on https://mergify.com
 ## Inputs
 
 <!-- AUTO-DOC-INPUT:START - Do not remove or modify this section -->
+```yaml
+- uses: Mergifyio/gha-mergify-ci@v9
+  id: gha-mergify-ci
+  with:
+    # The Mergify CI action:
+* junit-process: process JUnit XML files with Mergify CI Insights (Upload and Quarantine)
+* scopes: detect and upload pull requests scopes to Mergify Merge Queue
+* wait-jobs: wait for specified jobs to complete before proceeding
 
-|        INPUT         |  TYPE  | REQUIRED |           DEFAULT           |                                                                                                DESCRIPTION                                                                                                |
-|----------------------|--------|----------|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|        action        | string |  false   |      `"junit-process"`      | The Mergify CI action: * junit-process: <br>process JUnit XML files with Mergify <br>CI Insights (Upload and Quarantine) * scopes: detect <br>and upload pull requests scopes to <br>Mergify Merge Queue  |
-| flaky_test_detection | string |  false   |          `"false"`          |                                                                    Mark test execution as part of <br>a flaky test detection process                                                                      |
-|       job_name       | string |  false   |                             |                                             Override the job name, must be <br>used in case of matrix job <br>to avoid having the same name <br>for all jobs                                              |
-|   mergify_api_url    | string |  false   | `"https://api.mergify.com"` |                                                                                          URL of the Mergify API                                                                                           |
-|     report_path      | string |  false   |                             |                                                                                        Path of the files to upload                                                                                        |
-|        token         | string |  false   |                             |                                                                                             Mergify CI token                                                                                              |
+    # Type: string
+    # Default: "junit-process"
+    action: ''
 
+    # Mark test execution as part of a flaky test detection process
+    # Type: boolean
+    # Default: "false"
+    flaky_test_detection: ''
+
+    # Override the job name, must be used in case of matrix job to avoid
+having the same name for all jobs
+
+    # Type: string
+    job_name: ''
+
+    # List of jobs to wait for completion
+    # Type: string
+    jobs: ''
+
+    # URL of the Mergify API
+    # Type: string
+    # Default: "https://api.mergify.com"
+    mergify_api_url: ''
+
+    # Path of the files to upload
+    # Type: string
+    report_path: ''
+
+    # Mergify CI token
+    # Type: string
+    token: ''
+
+```
 <!-- AUTO-DOC-INPUT:END --> 
