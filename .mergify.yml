@@ -21,7 +21,6 @@ shared:
     - check-success=linters
     - check-success=test-junit
     - check-success=test-scopes
-    - check-success=autodoc
 
 
 scopes:
