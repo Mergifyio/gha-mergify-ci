@@ -73,7 +73,21 @@ jobs:
       - name: Checkout 🛎️
         uses: actions/checkout@v5.0.0
 
-      - name: Trying action
+      - name: Trying action scopes-git-refs
+        id: scopes-git-refs
+        uses: ./
+        with:
+          action: scopes-git-refs
+
+      - name: Trying action scopes-upload
+        id: scopes-upload
+        uses: ./
+        with:
+          action: scopes-upload
+          token: ${{ secrets.MERGIFY_TOKEN }}
+          scopes: scope1,scope2
+
+      - name: Trying action scopes
         id: scopes-detection
         uses: ./
         with:

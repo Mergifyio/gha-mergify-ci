@@ -17,6 +17,8 @@ More information on https://mergify.com
     # The Mergify CI action:
 * junit-process: process JUnit XML files with Mergify CI Insights (Upload and Quarantine)
 * scopes: detect and upload pull requests scopes to Mergify Merge Queue
+* scopes-git-refs: return the base/head git references of the pull request in Merge Queue context
+* scopes-upload: upload pull requests scopes to Mergify Merge Queue
 * wait-jobs: wait for specified jobs to complete before proceeding
 
     # Type: string
@@ -46,6 +48,10 @@ having the same name for all jobs
     # Path of the files to upload
     # Type: string
     report_path: ''
+
+    # Comma separated list of scopes to upload
+    # Type: string
+    scopes: ''
 
     # Mergify CI token
     # Type: string
