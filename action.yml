@@ -33,6 +33,12 @@ outputs:
   scopes:
     description: stringified JSON mapping with names of all scopes matching any of changed files
     value: ${{ steps.scopes-detection.outputs.scopes }}
+  base:
+    description: The Merge Queue aware base sha of the pull request
+    value: ${{ steps.scopes-detection.outputs.base }}
+  head:
+    description: The Merge Queue aware head sha of the pull request
+    value: ${{ steps.scopes-detection.outputs.head }}
 runs:
   using: composite
   steps:
