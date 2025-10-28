@@ -10,6 +10,8 @@ inputs:
       The Mergify CI action:
       * junit-process: process JUnit XML files with Mergify CI Insights (Upload and Quarantine)
       * scopes: detect and upload pull requests scopes to Mergify Merge Queue
+      * scopes-git-refs: return the base/head git references of the pull request in Merge Queue context
+      * scopes-upload: upload pull requests scopes to Mergify Merge Queue
       * wait-jobs: wait for specified jobs to complete before proceeding
     # Backward compat
     default: junit-process
@@ -27,18 +29,31 @@ inputs:
   flaky_test_detection:
     description: Mark test execution as part of a flaky test detection process
     default: "false"
+  scopes:
+    description: Comma separated list of scopes to upload
   jobs:
     description: List of jobs to wait for completion
 outputs:
   scopes:
     description: stringified JSON mapping with names of all scopes matching any of changed files
     value: ${{ steps.scopes-detection.outputs.scopes }}
+  base:
+    description: The Merge Queue aware base sha of the pull request
+    value: ${{ steps.scopes-detection.outputs.base }}
+  head:
+    description: The Merge Queue aware head sha of the pull request
+    value: ${{ steps.scopes-detection.outputs.head }}
 runs:
   using: composite
   steps:
     - name: Inputs checks
       shell: bash
-      if: ${{ inputs.action != 'junit-process' && inputs.action != 'scopes' && inputs.action != 'wait-jobs' }}
+      if: |
+        inputs.action != 'junit-process' &&
+        inputs.action != 'scopes' &&
+        inputs.action != 'wait-jobs' &&
+        inputs.action != 'scopes-git-refs' &&
+        inputs.action != 'scopes-upload'
       env:
         ACTION: ${{ inputs.action }}
       run: |
@@ -69,15 +84,36 @@ runs:
         set -x -e
         mergify ci junit-process ${FILES}
 
-    - name: Detect scopes
-      if: inputs.action == 'scopes'
+    - name: Detect scopes, head sha and base sha
+      if: inputs.action == 'scopes' || inputs.action == 'scopes-upload' || inputs.action == 'scopes-git-refs'
       id: scopes-detection
       shell: bash
       run: mergify ci scopes --write $RUNNER_TEMP/mergify-scopes.json
 
     - name: Upload scopes to Mergify API
       shell: bash
-      if: inputs.token && inputs.action == 'scopes'
+      if: inputs.action == 'scopes-upload'
+      env:
+        SCOPES: ${{ inputs.scopes }}
+        BASE: ${{ steps.scopes-detection.outputs.base }}
+        HEAD: ${{ steps.scopes-detection.outputs.head }}
+      run: |
+        set -euo pipefail
+        FILE="$RUNNER_TEMP/mergify-scopes.json"
+        # Convert comma-separated SCOPES into a JSON array
+        SCOPES_JSON=$(jq -R -s 'split(",")' <<< "$SCOPES")
+        jq -n \
+          --arg base "$BASE" \
+          --arg head "$HEAD" \
+          --argjson scopes "$SCOPES_JSON" \
+          '{base_ref: $base, head_ref: $head, scopes: $scopes}' > "$FILE"
+
+        echo "Created scopes file:"
+        cat "$FILE"
+
+    - name: Upload scopes to Mergify API
+      shell: bash
+      if: inputs.token && ( inputs.action == 'scopes' || inputs.action == 'scopes-upload' )
       env:
         MERGIFY_TOKEN: ${{ inputs.token }}
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
