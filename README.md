@@ -25,11 +25,6 @@ More information on https://mergify.com
     # Default: "junit-process"
     action: ''
 
-    # Mark test execution as part of a flaky test detection process
-    # Type: boolean
-    # Default: "false"
-    flaky_test_detection: ''
-
     # Override the job name, must be used in case of matrix job to avoid
 having the same name for all jobs
 
