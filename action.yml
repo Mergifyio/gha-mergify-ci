@@ -26,9 +26,6 @@ inputs:
       having the same name for all jobs
   report_path:
     description: Path of the files to upload
-  flaky_test_detection:
-    description: Mark test execution as part of a flaky test detection process
-    default: "false"
   scopes:
     description: Comma separated list of scopes to upload
   jobs:
@@ -76,7 +73,6 @@ runs:
       if: inputs.action == 'junit-process'
       env:
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
-        MERGIFY_TEST_FLAKY_DETECTION: ${{ inputs.flaky_test_detection }}
         MERGIFY_TOKEN: ${{ inputs.token }}
         MERGIFY_JOB_NAME: ${{ inputs.job_name }}
         FILES: ${{ inputs.report_path }}
