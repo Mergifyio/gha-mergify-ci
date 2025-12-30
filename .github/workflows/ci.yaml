@@ -26,7 +26,7 @@ jobs:
           python-version: 3.14.2
 
       - name: Check workflow files
-        uses: docker://rhysd/actionlint:1.7.9
+        uses: docker://rhysd/actionlint:1.7.10
         with:
           args: -color
 
