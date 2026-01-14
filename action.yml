@@ -55,7 +55,7 @@ runs:
         ACTION: ${{ inputs.action }}
       run: |
         echo "Unsupported action: $ACTION"
-        echo "Valid actions are: junit-process, scopes, wait-jobs"
+        echo "Valid actions are: junit-process, scopes, scopes-git-refs, scopes-upload, wait-jobs"
         exit 1
 
     - name: Setup Python 🔧
