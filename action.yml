@@ -36,10 +36,10 @@ outputs:
     value: ${{ steps.scopes-detection.outputs.scopes }}
   base:
     description: The Merge Queue aware base sha of the pull request
-    value: ${{ steps.scopes-detection.outputs.base }}
+    value: ${{ steps.git-refs-detection.outputs.base || steps.scopes-detection.outputs.base }}
   head:
     description: The Merge Queue aware head sha of the pull request
-    value: ${{ steps.scopes-detection.outputs.head }}
+    value: ${{ steps.git-refs-detection.outputs.head || steps.scopes-detection.outputs.head }}
 runs:
   using: composite
   steps:
@@ -80,8 +80,14 @@ runs:
         set -x -e
         mergify ci junit-process ${FILES}
 
+    - name: Detect head sha and base sha
+      if: inputs.action == 'scopes-git-refs'
+      id: git-refs-detection
+      shell: bash
+      run: mergify ci git-refs
+
     - name: Detect scopes, head sha and base sha
-      if: inputs.action == 'scopes' || inputs.action == 'scopes-upload' || inputs.action == 'scopes-git-refs'
+      if: inputs.action == 'scopes' || inputs.action == 'scopes-upload'
       id: scopes-detection
       shell: bash
       run: mergify ci scopes --write $RUNNER_TEMP/mergify-scopes.json
