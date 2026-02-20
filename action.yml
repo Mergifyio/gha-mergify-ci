@@ -103,7 +103,7 @@ runs:
         set -euo pipefail
         FILE="$RUNNER_TEMP/mergify-scopes.json"
         # Convert comma-separated SCOPES into a JSON array
-        SCOPES_JSON=$(jq -R -s 'split(",")' <<< "$SCOPES")
+        SCOPES_JSON=$(jq -R -s 'rtrimstr("\n") | split(",")' <<< "$SCOPES")
         jq -n \
           --arg base "$BASE" \
           --arg head "$HEAD" \
