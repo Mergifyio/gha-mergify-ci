@@ -81,13 +81,13 @@ runs:
         mergify ci junit-process ${FILES}
 
     - name: Detect head sha and base sha
-      if: inputs.action == 'scopes-git-refs'
+      if: inputs.action == 'scopes-git-refs' || inputs.action == 'scopes-upload'
       id: git-refs-detection
       shell: bash
       run: mergify ci git-refs
 
     - name: Detect scopes, head sha and base sha
-      if: inputs.action == 'scopes' || inputs.action == 'scopes-upload'
+      if: inputs.action == 'scopes'
       id: scopes-detection
       shell: bash
       run: mergify ci scopes --write $RUNNER_TEMP/mergify-scopes.json
@@ -97,8 +97,8 @@ runs:
       if: inputs.action == 'scopes-upload'
       env:
         SCOPES: ${{ inputs.scopes }}
-        BASE: ${{ steps.scopes-detection.outputs.base }}
-        HEAD: ${{ steps.scopes-detection.outputs.head }}
+        BASE: ${{ steps.git-refs-detection.outputs.base }}
+        HEAD: ${{ steps.git-refs-detection.outputs.head }}
       run: |
         set -euo pipefail
         FILE="$RUNNER_TEMP/mergify-scopes.json"
