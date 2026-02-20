@@ -5,7 +5,6 @@ shared:
       {{ title }} (#{{ number }})
 
       {{ body }}
-    allow_inplace_checks: true
     merge_method: squash
   CheckRuns: &CheckRuns
     - check-success=linters
