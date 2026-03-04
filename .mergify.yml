@@ -7,10 +7,7 @@ shared:
       {{ body }}
     merge_method: squash
   CheckRuns: &CheckRuns
-    - check-success=linters
-    - check-success=test-junit
-    - check-success=test-scopes
-    - check-success=autodoc
+    - check-success=all-greens
 
 
 scopes:

@@ -13,6 +13,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: Mergifyio/gha-mergify-ci@v14
+        id: changes
+        with:
+          action: scopes
+          token: ${{ secrets.MERGIFY_TOKEN }}
+
   linters:
     timeout-minutes: 5
     runs-on: ubuntu-24.04
@@ -150,6 +163,23 @@ jobs:
       - name: Trying action
         id: scopes-detection
         uses: ./
+        with:
+          action: wait-jobs
+          jobs: ${{ toJSON(needs) }}
+
+  all-greens:
+    if: ${{ !cancelled() }}
+    needs:
+      - changes
+      - linters
+      - autodoc
+      - test-scopes
+      - test-junit
+      - test-wait-jobs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all jobs succeeded
+        uses: Mergifyio/gha-mergify-ci@v14
         with:
           action: wait-jobs
           jobs: ${{ toJSON(needs) }}
