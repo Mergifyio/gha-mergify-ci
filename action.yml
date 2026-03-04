@@ -28,6 +28,8 @@ inputs:
     description: Path of the files to upload
   scopes:
     description: Comma separated list of scopes to upload
+  mergify_config_path:
+    description: Path to the Mergify configuration file
   jobs:
     description: List of jobs to wait for completion
 outputs:
@@ -84,18 +86,23 @@ runs:
       if: inputs.action == 'scopes-git-refs' || inputs.action == 'scopes-upload'
       id: git-refs-detection
       shell: bash
+      env:
+        MERGIFY_CONFIG_PATH: ${{ inputs.mergify_config_path }}
       run: mergify ci git-refs
 
     - name: Detect scopes, head sha and base sha
       if: inputs.action == 'scopes'
       id: scopes-detection
       shell: bash
+      env:
+        MERGIFY_CONFIG_PATH: ${{ inputs.mergify_config_path }}
       run: mergify ci scopes --write $RUNNER_TEMP/mergify-scopes.json
 
     - name: Upload scopes to Mergify API
       shell: bash
       if: inputs.action == 'scopes-upload'
       env:
+        MERGIFY_CONFIG_PATH: ${{ inputs.mergify_config_path }}
         SCOPES: ${{ inputs.scopes }}
         BASE: ${{ steps.git-refs-detection.outputs.base }}
         HEAD: ${{ steps.git-refs-detection.outputs.head }}
@@ -119,6 +126,7 @@ runs:
       env:
         MERGIFY_TOKEN: ${{ inputs.token }}
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
+        MERGIFY_CONFIG_PATH: ${{ inputs.mergify_config_path }}
       run: mergify ci scopes-send --file $RUNNER_TEMP/mergify-scopes.json
 
     - name: Wait jobs
