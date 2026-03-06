@@ -40,6 +40,10 @@ having the same name for all jobs
     # Default: "https://api.mergify.com"
     mergify_api_url: ''
 
+    # Path to the Mergify configuration file
+    # Type: string
+    mergify_config_path: ''
+
     # Path of the files to upload
     # Type: string
     report_path: ''
