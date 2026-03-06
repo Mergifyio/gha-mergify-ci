@@ -87,14 +87,14 @@ runs:
       run: mergify ci git-refs
 
     - name: Detect scopes, head sha and base sha
-      if: inputs.action == 'scopes'
+      if: github.event.pull_request && inputs.action == 'scopes'
       id: scopes-detection
       shell: bash
       run: mergify ci scopes --write $RUNNER_TEMP/mergify-scopes.json
 
     - name: Upload scopes to Mergify API
       shell: bash
-      if: inputs.action == 'scopes-upload'
+      if: github.event.pull_request && inputs.action == 'scopes-upload'
       env:
         SCOPES: ${{ inputs.scopes }}
         BASE: ${{ steps.git-refs-detection.outputs.base }}
@@ -115,7 +115,10 @@ runs:
 
     - name: Upload scopes to Mergify API
       shell: bash
-      if: inputs.token && ( inputs.action == 'scopes' || inputs.action == 'scopes-upload' )
+      if: |
+        inputs.token &&
+        github.event.pull_request &&
+        (inputs.action == 'scopes' || inputs.action == 'scopes-upload')
       env:
         MERGIFY_TOKEN: ${{ inputs.token }}
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
