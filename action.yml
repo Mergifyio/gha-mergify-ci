@@ -9,9 +9,9 @@ inputs:
     description: |
       The Mergify CI action:
       * junit-process: process JUnit XML files with Mergify CI Insights (Upload and Quarantine)
-      * scopes: detect and upload pull requests scopes to Mergify Merge Queue
+      * scopes: detect and upload PR scopes to Mergify Merge Queue (pull_request only)
       * scopes-git-refs: return the base/head git references of the pull request in Merge Queue context
-      * scopes-upload: upload pull requests scopes to Mergify Merge Queue
+      * scopes-upload: upload PR scopes to Mergify Merge Queue (pull_request only)
       * wait-jobs: wait for specified jobs to complete before proceeding
     # Backward compat
     default: junit-process
