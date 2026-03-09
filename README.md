@@ -11,7 +11,7 @@ More information on https://mergify.com
 
 <!-- AUTO-DOC-INPUT:START - Do not remove or modify this section -->
 ```yaml
-- uses: Mergifyio/gha-mergify-ci@v14
+- uses: Mergifyio/gha-mergify-ci@v15
   id: gha-mergify-ci
   with:
     # The Mergify CI action:
@@ -39,6 +39,10 @@ having the same name for all jobs
     # Type: string
     # Default: "https://api.mergify.com"
     mergify_api_url: ''
+
+    # Path to the Mergify configuration file
+    # Type: string
+    mergify_config_path: ''
 
     # Path of the files to upload
     # Type: string
