@@ -13,19 +13,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: read
-    steps:
-      - uses: actions/checkout@v6.0.2
-      - uses: Mergifyio/gha-mergify-ci@v14
-        id: changes
-        with:
-          action: scopes
-          token: ${{ secrets.MERGIFY_TOKEN }}
-
   linters:
     timeout-minutes: 5
     runs-on: ubuntu-24.04
@@ -91,6 +78,7 @@ jobs:
         uses: ./
         with:
           action: scopes-git-refs
+          mergify_config_path: zfixtures/mergify.yml
 
       - name: Trying action scopes-upload
         id: scopes-upload
@@ -99,6 +87,7 @@ jobs:
           action: scopes-upload
           token: ${{ secrets.MERGIFY_TOKEN }}
           scopes: scope1,scope2
+          mergify_config_path: zfixtures/mergify.yml
 
       - name: Trying action scopes
         id: scopes-detection
@@ -106,6 +95,7 @@ jobs:
         with:
           action: scopes
           token: ${{ secrets.MERGIFY_TOKEN }}
+          mergify_config_path: zfixtures/mergify.yml
 
       - name: Check scopes
         env:
@@ -136,6 +126,7 @@ jobs:
           token: fake-valid-token
           report_path: zfixtures/*.xml
           mergify_api_url: http://localhost:1080
+          mergify_config_path: zfixtures/mergify.yml
 
       - name: Run action with error scenario ❌
         id: error500
@@ -146,6 +137,7 @@ jobs:
           token: fake-valid-token
           report_path: zfixtures/junit_example.xml
           mergify_api_url: http://localhost:1085
+          mergify_config_path: zfixtures/mergify.yml
 
       - name: Dump mockserver logs
         if: always()
@@ -166,11 +158,11 @@ jobs:
         with:
           action: wait-jobs
           jobs: ${{ toJSON(needs) }}
+          mergify_config_path: zfixtures/mergify.yml
 
   all-greens:
     if: ${{ !cancelled() }}
     needs:
-      - changes
       - linters
       - autodoc
       - test-scopes
