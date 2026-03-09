@@ -1,0 +1,5 @@
+scopes:
+  source:
+    files:
+      # Used by .github/workflow/ci.yml to test the action
+      everything: {}

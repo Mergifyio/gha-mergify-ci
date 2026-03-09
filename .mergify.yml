@@ -10,12 +10,6 @@ shared:
     - check-success=all-greens
 
 
-scopes:
-  source:
-    files:
-      # Used by .github/workflow/ci.yml to test the action
-      everything: {}
-
 merge_queue:
   max_parallel_checks: 5
 
