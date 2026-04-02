@@ -52,6 +52,15 @@ having the same name for all jobs
     # Type: string
     scopes: ''
 
+    # Outcome of the test runner step (e.g. steps.<id>.outcome).
+Pass this to detect silent failures where the test runner crashed
+but the JUnit report appears clean.
+Values: 'success', 'failure', 'cancelled', 'skipped', or omit entirely.
+'skipped' is treated the same as omitting this input.
+
+    # Type: string
+    test_step_outcome: ''
+
     # Mergify CI token
     # Type: string
     token: ''
