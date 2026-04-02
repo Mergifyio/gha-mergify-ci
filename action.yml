@@ -30,6 +30,13 @@ inputs:
     description: Comma separated list of scopes to upload
   mergify_config_path:
     description: Path to the Mergify configuration file
+  test_step_outcome:
+    description: |
+      Outcome of the test runner step (e.g. steps.<id>.outcome).
+      Pass this to detect silent failures where the test runner crashed
+      but the JUnit report appears clean.
+      Values: 'success', 'failure', 'cancelled', 'skipped', or omit entirely.
+      'skipped' is treated the same as omitting this input.
   jobs:
     description: List of jobs to wait for completion
 outputs:
@@ -84,6 +91,11 @@ runs:
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
         MERGIFY_TOKEN: ${{ inputs.token }}
         MERGIFY_JOB_NAME: ${{ inputs.job_name }}
+        MERGIFY_TEST_EXIT_CODE: >-
+          ${{ inputs.test_step_outcome == 'success' && '0'
+          || (inputs.test_step_outcome == 'failure'
+          || inputs.test_step_outcome == 'cancelled') && '1'
+          || '' }}
         FILES: ${{ inputs.report_path }}
       run: |
         set -x -e
