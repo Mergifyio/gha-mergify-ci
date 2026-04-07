@@ -1,0 +1,35 @@
+name: Update documentation
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  autodoc:
+    timeout-minutes: 5
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Run auto-doc
+        uses: tj-actions/auto-doc@v3.6.0
+        with:
+          use_code_blocks: true
+          col_max_words: 120
+          use_major_version: true
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore: update documentation for ${{ github.event.release.tag_name }}"
+          title: "chore: update documentation for ${{ github.event.release.tag_name }}"
+          body: |
+            Auto-generated documentation update after release ${{ github.event.release.tag_name }}.
+          branch: autodoc/update-${{ github.event.release.tag_name }}
