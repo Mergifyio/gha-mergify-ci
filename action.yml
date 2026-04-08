@@ -139,6 +139,14 @@ runs:
         echo "Created scopes file:"
         cat "$FILE"
 
+    - name: Warn if token is unset for scopes upload
+      shell: bash
+      if: |
+        !inputs.token &&
+        github.event.pull_request &&
+        (inputs.action == 'scopes' || inputs.action == 'scopes-upload')
+      run: echo "::warning::Mergify token is not set, scopes will not be sent to Mergify API"
+
     - name: Upload scopes to Mergify API
       shell: bash
       if: |
