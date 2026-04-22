@@ -16,7 +16,6 @@ merge_queue:
 queue_rules:
   - name: automated updates
     <<: *DefaultQueueOptions
-    autoqueue: true
     queue_conditions:
       - base = main
       - or:
@@ -31,7 +30,6 @@ queue_rules:
     commit_message_template:
   - name: default
     <<: *DefaultQueueOptions
-    autoqueue: true
     queue_conditions:
       - base = main
     merge_conditions:
@@ -73,3 +71,4 @@ merge_protections:
 
 merge_protections_settings:
   reporting_method: deployments
+  auto_merge: true
