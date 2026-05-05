@@ -39,6 +39,11 @@ inputs:
       'skipped' is treated the same as omitting this input.
   jobs:
     description: List of jobs to wait for completion
+  mergify_cli_version:
+    description: |
+      Version of mergify-cli to install. Use `latest` to install the latest
+      released version without pinning.
+    default: 2026.5.1.1
 outputs:
   scopes:
     description: stringified JSON mapping with names of all scopes matching any of changed files
@@ -80,8 +85,14 @@ runs:
 
     - name: Install dependencies
       shell: bash
+      env:
+        MERGIFY_CLI_VERSION: ${{ inputs.mergify_cli_version }}
       run: |
-        uv tool install mergify-cli
+        if [ -z "$MERGIFY_CLI_VERSION" ] || [ "$MERGIFY_CLI_VERSION" = "latest" ]; then
+          uv tool install mergify-cli
+        else
+          uv tool install "mergify-cli==$MERGIFY_CLI_VERSION"
+        fi
         mergify --version
 
     - shell: bash
