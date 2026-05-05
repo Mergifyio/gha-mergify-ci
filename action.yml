@@ -157,7 +157,7 @@ runs:
         MERGIFY_TOKEN: ${{ inputs.token }}
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
         MERGIFY_CONFIG_PATH: ${{ inputs.mergify_config_path }}
-      run: mergify ci scopes-send --file $RUNNER_TEMP/mergify-scopes.json
+      run: mergify ci scopes-send --scopes-json $RUNNER_TEMP/mergify-scopes.json
 
     - name: Wait jobs
       if: inputs.action == 'wait-jobs'
