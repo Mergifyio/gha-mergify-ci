@@ -40,6 +40,13 @@ having the same name for all jobs
     # Default: "https://api.mergify.com"
     mergify_api_url: ''
 
+    # Version of mergify-cli to install. Use `latest` to install the latest
+released version without pinning.
+
+    # Type: string
+    # Default: "2026.5.5.4"
+    mergify_cli_version: ''
+
     # Path to the Mergify configuration file
     # Type: string
     mergify_config_path: ''
