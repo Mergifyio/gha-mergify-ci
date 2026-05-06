@@ -43,6 +43,7 @@ inputs:
     description: |
       Version of mergify-cli to install. Use `latest` to install the latest
       released version without pinning.
+    # renovate: datasource=pypi depName=mergify-cli
     default: 2026.5.1.1
 outputs:
   scopes:
