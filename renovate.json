@@ -19,7 +19,9 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^action\\.yml$"],
+      "managerFilePatterns": [
+        "/^action\\.yml$/"
+      ],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[a-z0-9-]+))?\\s+default:\\s*(?<currentValue>[^\\s]+)"
       ]
