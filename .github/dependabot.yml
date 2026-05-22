@@ -7,3 +7,5 @@ updates:
       # yamllint disable-line rule:quoted-strings
       time: "08:00"
       timezone: Europe/Paris
+    cooldown:
+      default-days: 7
