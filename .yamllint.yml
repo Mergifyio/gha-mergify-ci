@@ -17,8 +17,10 @@ rules:
   # https://github.com/adrienverge/yamllint/issues/141
   # https://github.com/adrienverge/yamllint/issues/384
   comments-indentation: disable
-  line-length:
-    max: 110
+  # Renovate pins actions/images to digests, producing lines that exceed any
+  # sensible width (e.g. docker://...@sha256:<64 hex>). Disable the check so
+  # renovate can pin freely without per-line opt-outs.
+  line-length: disable
   quoted-strings:
     quote-type: double
     required: only-when-needed
