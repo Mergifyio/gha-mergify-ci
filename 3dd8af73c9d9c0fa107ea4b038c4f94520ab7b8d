@@ -1,0 +1,1 @@
+Disable yamllint line-length globally in .yamllint.yml instead of a per-line opt-out, so renovate digest pins never trip the check again
