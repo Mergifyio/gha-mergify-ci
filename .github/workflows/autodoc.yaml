@@ -32,4 +32,4 @@ jobs:
           title: "chore: update documentation for ${{ github.event.release.tag_name }}"
           body: |
             Auto-generated documentation update after release ${{ github.event.release.tag_name }}.
-          branch: autodoc/update-${{ github.event.release.tag_name }}
+          branch: devs/autodoc/update-${{ github.event.release.tag_name }}
