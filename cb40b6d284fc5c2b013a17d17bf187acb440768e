@@ -1,0 +1,1 @@
+Scope reduced to just the yamllint line-length ignore rule; digest pinning left to renovate (#201) per review
