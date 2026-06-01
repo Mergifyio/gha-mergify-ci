@@ -44,7 +44,7 @@ having the same name for all jobs
 released version without pinning.
 
     # Type: string
-    # Default: "2026.5.5.4"
+    # Default: "2026.5.29.2"
     mergify_cli_version: ''
 
     # Path to the Mergify configuration file
