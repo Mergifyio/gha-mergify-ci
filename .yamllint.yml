@@ -9,6 +9,9 @@ rules:
   truthy: disable
   comments:
     level: error
+    # Renovate pins digests as "@<sha> # v1.2.3" with a single space before the
+    # comment; allow it instead of yamllint's default of 2.
+    min-spaces-from-content: 1
   # Buggy checks:
   # https://github.com/adrienverge/yamllint/issues/375
   # https://github.com/adrienverge/yamllint/issues/141
