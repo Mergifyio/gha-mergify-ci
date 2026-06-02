@@ -1,0 +1,1 @@
+CI uses the tj-actions/auto-doc action which defaults markdown_links=true; set it false so the action's table matches generate-doc.sh's plain output.
