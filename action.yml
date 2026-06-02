@@ -94,8 +94,9 @@ runs:
         else
           uv tool install "mergify-cli==$MERGIFY_CLI_VERSION"
         fi
-        if [ "${RUNNER_OS:-}" = "Windows" ] && [ -n "${UV_TOOL_DIR:-}" ]; then
-          export MERGIFY_PYTHON_EXE="${UV_TOOL_DIR}\\mergify-cli\\Scripts\\python.exe"
+        if [ "${RUNNER_OS:-}" = "Windows" ]; then
+          TOOL_DIR="$(uv tool dir)"
+          export MERGIFY_PYTHON_EXE="${TOOL_DIR}\\mergify-cli\\Scripts\\python.exe"
           printf '%s\n' "MERGIFY_PYTHON_EXE=$MERGIFY_PYTHON_EXE" >> "$GITHUB_ENV"
         fi
         mergify --version
