@@ -89,6 +89,10 @@ runs:
       env:
         MERGIFY_CLI_VERSION: ${{ inputs.mergify_cli_version }}
       run: |
+        if [ "${RUNNER_OS:-}" = "Windows" ] && [ -n "${pythonLocation:-}" ]; then
+          export MERGIFY_PYTHON_EXE="${pythonLocation}\\python.exe"
+          printf '%s\n' "MERGIFY_PYTHON_EXE=$MERGIFY_PYTHON_EXE" >> "$GITHUB_ENV"
+        fi
         if [ -z "$MERGIFY_CLI_VERSION" ] || [ "$MERGIFY_CLI_VERSION" = "latest" ]; then
           uv tool install mergify-cli
         else
