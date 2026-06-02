@@ -90,7 +90,10 @@ runs:
         MERGIFY_CLI_VERSION: ${{ inputs.mergify_cli_version }}
       run: |
         if [ -z "$MERGIFY_CLI_VERSION" ] || [ "$MERGIFY_CLI_VERSION" = "latest" ]; then
-          uv tool install mergify-cli
+          # --upgrade implies --refresh, so uv re-resolves against PyPI and
+          # installs the newest release even on persistent self-hosted runners
+          # where an older mergify-cli is already cached.
+          uv tool install --upgrade mergify-cli
         else
           uv tool install "mergify-cli==$MERGIFY_CLI_VERSION"
         fi
