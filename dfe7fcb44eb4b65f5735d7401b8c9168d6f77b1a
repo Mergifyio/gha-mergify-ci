@@ -1,0 +1,1 @@
+Reworked from a plain v18->v19 doc bump into the actual fix: remove the broken release workflow and switch the README to a version-less inputs table so it no longer churns per release.
