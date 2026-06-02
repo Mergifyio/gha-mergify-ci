@@ -1,0 +1,1 @@
+Add a docs.mergify.com setup-guide link in the README Usage section for users who need help (outside the auto-doc markers, so it does not affect the autodoc check).
