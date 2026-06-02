@@ -2,7 +2,7 @@
     {
         "httpRequest": {
             "method": "POST",
-            "path": "/v1/repos/[^/]+/[^/]+/ci/traces",
+            "path": "/v1/repos/Mergifyio/gha-mergify-ci/ci/traces",
             "headers": {
                 "Authorization": "Bearer fake-valid-token"
             }
@@ -14,7 +14,7 @@
     {
         "httpRequest": {
             "method": "POST",
-            "path": "/v1/ci/[^/]+/repositories/[^/]+/quarantines/check",
+            "path": "/v1/ci/Mergifyio/repositories/gha-mergify-ci/quarantines/check",
             "headers": {
                 "Authorization": "Bearer fake-valid-token"
             }
