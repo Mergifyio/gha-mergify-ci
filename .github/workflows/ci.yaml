@@ -47,9 +47,8 @@ jobs:
       - name: Run auto-doc
         uses: tj-actions/auto-doc@b10ceedffd794ec29a8fa8700529f40c1b64a951 # v3.6.0
         with:
-          use_code_blocks: true
           col_max_words: 120
-          use_major_version: true
+          markdown_links: false
 
       - name: Verify Changed files
         uses: tj-actions/verify-changed-files@a1c6acee9df209257a246f2cc6ae8cb6581c1edf # v20

@@ -7,70 +7,43 @@ GitHub Action to:
 
 More information on https://mergify.com
 
+## Usage
+
+Pin the action to a released version (see the [releases](https://github.com/Mergifyio/gha-mergify-ci/releases)):
+
+```yaml
+- uses: Mergifyio/gha-mergify-ci@v19
+  with:
+    action: junit-process
+    token: ${{ secrets.MERGIFY_TOKEN }}
+    report_path: "**/junit*.xml"
+```
+
 ## Inputs
 
 <!-- AUTO-DOC-INPUT:START - Do not remove or modify this section -->
-```yaml
-- uses: Mergifyio/gha-mergify-ci@v18
-  id: gha-mergify-ci
-  with:
-    # The Mergify CI action:
-* junit-process: process JUnit XML files with Mergify CI Insights (Upload and Quarantine)
-* scopes: detect and upload pull requests scopes to Mergify Merge Queue
-* scopes-git-refs: return the base/head git references of the pull request in Merge Queue context
-* scopes-upload: upload pull requests scopes to Mergify Merge Queue
-* wait-jobs: wait for specified jobs to complete before proceeding
 
-    # Type: string
-    # Default: "junit-process"
-    action: ''
+|        INPUT        |  TYPE  | REQUIRED |           DEFAULT           |                                            DESCRIPTION                                            |
+|---------------------|--------|----------|-----------------------------|---------------------------------------------------------------------------------------------------|
+|       action        | string |  false   |      `"junit-process"`      | The Mergify CI action: * junit-process: process JUnit XML files with Mergify CI Insights (Upload  |
+|                     |        |          |                             |     and Quarantine) * scopes: detect and upload pull requests scopes to Mergify Merge Queue *     |
+|                     |        |          |                             | scopes-git-refs: return the base/head git references of the pull request in Merge Queue context * |
+|                     |        |          |                             | scopes-upload: upload pull requests scopes to Mergify Merge Queue * wait-jobs: wait for specified |
+|                     |        |          |                             |                                jobs to complete before proceeding                                 |
+|      job_name       | string |  false   |                             |                Override the job name, must be used in case of matrix job to avoid                 |
+|                     |        |          |                             |                                having the same name for all jobs                                  |
+|        jobs         | string |  false   |                             |                                List of jobs to wait for completion                                |
+|   mergify_api_url   | string |  false   | `"https://api.mergify.com"` |                                      URL of the Mergify API                                       |
+| mergify_cli_version | string |  false   |       `"2026.5.29.2"`       |               Version of mergify-cli to install. Use `latest` to install the latest               |
+|                     |        |          |                             |                                released version without pinning.                                  |
+| mergify_config_path | string |  false   |                             |                              Path to the Mergify configuration file                               |
+|     report_path     | string |  false   |                             |                                    Path of the files to upload                                    |
+|       scopes        | string |  false   |                             |                             Comma separated list of scopes to upload                              |
+|  test_step_outcome  | string |  false   |                             |               Outcome of the test runner step (e.g. steps.<id>.outcome). Pass this                |
+|                     |        |          |                             |               to detect silent failures where the test runner crashed but the JUnit               |
+|                     |        |          |                             |                 report appears clean. Values: 'success', 'failure', 'cancelled',                  |
+|                     |        |          |                             |              'skipped', or omit entirely. 'skipped' is treated the same as omitting               |
+|                     |        |          |                             |                                           this input.                                             |
+|        token        | string |  false   |                             |                                         Mergify CI token                                          |
 
-    # Override the job name, must be used in case of matrix job to avoid
-having the same name for all jobs
-
-    # Type: string
-    job_name: ''
-
-    # List of jobs to wait for completion
-    # Type: string
-    jobs: ''
-
-    # URL of the Mergify API
-    # Type: string
-    # Default: "https://api.mergify.com"
-    mergify_api_url: ''
-
-    # Version of mergify-cli to install. Use `latest` to install the latest
-released version without pinning.
-
-    # Type: string
-    # Default: "2026.5.29.2"
-    mergify_cli_version: ''
-
-    # Path to the Mergify configuration file
-    # Type: string
-    mergify_config_path: ''
-
-    # Path of the files to upload
-    # Type: string
-    report_path: ''
-
-    # Comma separated list of scopes to upload
-    # Type: string
-    scopes: ''
-
-    # Outcome of the test runner step (e.g. steps.<id>.outcome).
-Pass this to detect silent failures where the test runner crashed
-but the JUnit report appears clean.
-Values: 'success', 'failure', 'cancelled', 'skipped', or omit entirely.
-'skipped' is treated the same as omitting this input.
-
-    # Type: string
-    test_step_outcome: ''
-
-    # Mergify CI token
-    # Type: string
-    token: ''
-
-```
-<!-- AUTO-DOC-INPUT:END --> 
+<!-- AUTO-DOC-INPUT:END -->
