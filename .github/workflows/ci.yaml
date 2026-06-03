@@ -44,26 +44,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - name: Run auto-doc
-        uses: tj-actions/auto-doc@b10ceedffd794ec29a8fa8700529f40c1b64a951 # v3.6.0
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          col_max_words: 120
-          markdown_links: false
+          enable-cache: false
+
+      - name: Regenerate documentation
+        run: ./generate-doc.sh
 
       - name: Verify Changed files
-        uses: tj-actions/verify-changed-files@a1c6acee9df209257a246f2cc6ae8cb6581c1edf # v20
-        id: verify-changed-files
-        with:
-          files: |
-            README.md
-          fail-if-changed: true
-          fail-message: Action documentation is out of date. Run `./generate-doc.sh`
-
-      - name: Display diff
-        if: failure()
         run: |
-          git diff
-          exit 1
+          if ! git diff --exit-code -- README.md; then
+            echo "::error::Action documentation is out of date. Run \`./generate-doc.sh\`"
+            exit 1
+          fi
 
 
   test-scopes:

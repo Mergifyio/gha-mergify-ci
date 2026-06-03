@@ -25,27 +25,17 @@ Need help setting it up? See the [GitHub Actions setup guide](https://docs.mergi
 
 <!-- AUTO-DOC-INPUT:START - Do not remove or modify this section -->
 
-|        INPUT        |  TYPE  | REQUIRED |           DEFAULT           |                                            DESCRIPTION                                            |
-|---------------------|--------|----------|-----------------------------|---------------------------------------------------------------------------------------------------|
-|       action        | string |  false   |      `"junit-process"`      | The Mergify CI action: * junit-process: process JUnit XML files with Mergify CI Insights (Upload  |
-|                     |        |          |                             |     and Quarantine) * scopes: detect and upload pull requests scopes to Mergify Merge Queue *     |
-|                     |        |          |                             | scopes-git-refs: return the base/head git references of the pull request in Merge Queue context * |
-|                     |        |          |                             | scopes-upload: upload pull requests scopes to Mergify Merge Queue * wait-jobs: wait for specified |
-|                     |        |          |                             |                                jobs to complete before proceeding                                 |
-|      job_name       | string |  false   |                             |                Override the job name, must be used in case of matrix job to avoid                 |
-|                     |        |          |                             |                                having the same name for all jobs                                  |
-|        jobs         | string |  false   |                             |                                List of jobs to wait for completion                                |
-|   mergify_api_url   | string |  false   | `"https://api.mergify.com"` |                                      URL of the Mergify API                                       |
-| mergify_cli_version | string |  false   |       `"2026.5.29.2"`       |               Version of mergify-cli to install. Use `latest` to install the latest               |
-|                     |        |          |                             |                                released version without pinning.                                  |
-| mergify_config_path | string |  false   |                             |                              Path to the Mergify configuration file                               |
-|     report_path     | string |  false   |                             |                                    Path of the files to upload                                    |
-|       scopes        | string |  false   |                             |                             Comma separated list of scopes to upload                              |
-|  test_step_outcome  | string |  false   |                             |               Outcome of the test runner step (e.g. steps.<id>.outcome). Pass this                |
-|                     |        |          |                             |               to detect silent failures where the test runner crashed but the JUnit               |
-|                     |        |          |                             |                 report appears clean. Values: 'success', 'failure', 'cancelled',                  |
-|                     |        |          |                             |              'skipped', or omit entirely. 'skipped' is treated the same as omitting               |
-|                     |        |          |                             |                                           this input.                                             |
-|        token        | string |  false   |                             |                                         Mergify CI token                                          |
+| Input | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `action` | string | false | `junit-process` | The Mergify CI action: * junit-process: process JUnit XML files with Mergify CI Insights (Upload and Quarantine) * scopes: detect and upload pull requests scopes to Mergify Merge Queue * scopes-git-refs: return the base/head git references of the pull request in Merge Queue context * scopes-upload: upload pull requests scopes to Mergify Merge Queue * wait-jobs: wait for specified jobs to complete before proceeding |
+| `job_name` | string | false |  | Override the job name, must be used in case of matrix job to avoid having the same name for all jobs |
+| `jobs` | string | false |  | List of jobs to wait for completion |
+| `mergify_api_url` | string | false | `https://api.mergify.com` | URL of the Mergify API |
+| `mergify_cli_version` | string | false | `2026.5.29.2` | Version of mergify-cli to install. Use `latest` to install the latest released version without pinning. |
+| `mergify_config_path` | string | false |  | Path to the Mergify configuration file |
+| `report_path` | string | false |  | Path of the files to upload |
+| `scopes` | string | false |  | Comma separated list of scopes to upload |
+| `test_step_outcome` | string | false |  | Outcome of the test runner step (e.g. steps.<id>.outcome). Pass this to detect silent failures where the test runner crashed but the JUnit report appears clean. Values: 'success', 'failure', 'cancelled', 'skipped', or omit entirely. 'skipped' is treated the same as omitting this input. |
+| `token` | string | false |  | Mergify CI token |
 
 <!-- AUTO-DOC-INPUT:END -->
