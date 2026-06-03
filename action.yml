@@ -44,7 +44,7 @@ inputs:
       Version of mergify-cli to install. Use `latest` to install the latest
       released version without pinning.
     # renovate: datasource=pypi depName=mergify-cli
-    default: 2026.5.29.2
+    default: 2026.6.2.4
 outputs:
   scopes:
     description: stringified JSON mapping with names of all scopes matching any of changed files
