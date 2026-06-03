@@ -1,0 +1,1 @@
+address Copilot review: render *-bulleted descriptions (the action input) as a <br>-separated list in the README cell instead of inline asterisks
