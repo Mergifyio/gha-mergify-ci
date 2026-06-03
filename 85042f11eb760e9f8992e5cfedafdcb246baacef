@@ -1,0 +1,1 @@
+address Copilot review: add uv-presence check in generate-doc.sh, pin utf-8/LF encoding in generate-doc.py for deterministic output, and correct the commit body's third-party-actions claim (setup-uv remains)
