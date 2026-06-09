@@ -12,7 +12,7 @@ More information on https://mergify.com
 Pin the action to a released version (see the [releases](https://github.com/Mergifyio/gha-mergify-ci/releases)):
 
 ```yaml
-- uses: Mergifyio/gha-mergify-ci@v19
+- uses: Mergifyio/gha-mergify-ci@v22
   with:
     action: junit-process
     token: ${{ secrets.MERGIFY_TOKEN }}
