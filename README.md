@@ -28,6 +28,8 @@ Need help setting it up? See the [GitHub Actions setup guide](https://docs.mergi
 | Input | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `action` | string | false | `junit-process` | The Mergify CI action:<br>• junit-process: process JUnit XML files with Mergify CI Insights (Upload and Quarantine)<br>• scopes: detect and upload pull requests scopes to Mergify Merge Queue<br>• scopes-git-refs: return the base/head git references of the pull request in Merge Queue context<br>• scopes-upload: upload pull requests scopes to Mergify Merge Queue<br>• wait-jobs: wait for specified jobs to complete before proceeding |
+| `base` | string | false |  | Base git reference for scope detection (action: scopes). Overrides the automatic push/pull-request detection. Leave unset to auto-detect. |
+| `head` | string | false |  | Head git reference for scope detection (action: scopes). Defaults to HEAD. Leave unset to auto-detect. |
 | `job_name` | string | false |  | Override the job name, must be used in case of matrix job to avoid having the same name for all jobs |
 | `jobs` | string | false |  | List of jobs to wait for completion |
 | `mergify_api_url` | string | false | `https://api.mergify.com` | URL of the Mergify API |

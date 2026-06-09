@@ -30,6 +30,14 @@ inputs:
     description: Comma separated list of scopes to upload
   mergify_config_path:
     description: Path to the Mergify configuration file
+  base:
+    description: |
+      Base git reference for scope detection (action: scopes). Overrides the
+      automatic push/pull-request detection. Leave unset to auto-detect.
+  head:
+    description: |
+      Head git reference for scope detection (action: scopes). Defaults to
+      HEAD. Leave unset to auto-detect.
   test_step_outcome:
     description: |
       Outcome of the test runner step (e.g. steps.<id>.outcome).
@@ -130,7 +138,13 @@ runs:
       shell: bash
       env:
         MERGIFY_CONFIG_PATH: ${{ inputs.mergify_config_path }}
-      run: mergify ci scopes --write $RUNNER_TEMP/mergify-scopes.json
+        BASE: ${{ inputs.base }}
+        HEAD: ${{ inputs.head }}
+      run: |
+        args=(--write "$RUNNER_TEMP/mergify-scopes.json")
+        [ -n "$BASE" ] && args+=(--base "$BASE")
+        [ -n "$HEAD" ] && args+=(--head "$HEAD")
+        mergify ci scopes "${args[@]}"
 
     - name: Upload scopes to Mergify API
       shell: bash
