@@ -52,7 +52,7 @@ inputs:
       Version of mergify-cli to install. Use `latest` to install the latest
       released version without pinning.
     # renovate: datasource=pypi depName=mergify-cli
-    default: 2026.6.5.1
+    default: 2026.6.8.1
 outputs:
   test_results_upload:
     description: |
