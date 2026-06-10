@@ -33,7 +33,7 @@ Need help setting it up? See the [GitHub Actions setup guide](https://docs.mergi
 | `job_name` | string | false |  | Override the job name, must be used in case of matrix job to avoid having the same name for all jobs |
 | `jobs` | string | false |  | List of jobs to wait for completion |
 | `mergify_api_url` | string | false | `https://api.mergify.com` | URL of the Mergify API |
-| `mergify_cli_version` | string | false | `2026.6.5.1` | Version of mergify-cli to install. Use `latest` to install the latest released version without pinning. |
+| `mergify_cli_version` | string | false | `2026.6.8.1` | Version of mergify-cli to install. Use `latest` to install the latest released version without pinning. |
 | `mergify_config_path` | string | false |  | Path to the Mergify configuration file |
 | `report_path` | string | false |  | Path of the files to upload |
 | `scopes` | string | false |  | Comma separated list of scopes to upload |
