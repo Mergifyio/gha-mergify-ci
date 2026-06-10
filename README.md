@@ -41,3 +41,28 @@ Need help setting it up? See the [GitHub Actions setup guide](https://docs.mergi
 | `token` | string | false |  | Mergify CI token |
 
 <!-- AUTO-DOC-INPUT:END -->
+
+## Outputs
+
+| Output | Description |
+| --- | --- |
+| `test_results_upload` | Outcome of the JUnit test-results upload to Mergify Test Insights (action: junit-process): `success`, `rejected` (the API refused the upload, e.g. a token without CI Insights access — no test data was recorded) or `failed` (transient upload error). Empty when the junit-process step did not run or the installed mergify-cli predates this output. |
+| `scopes` | Stringified JSON mapping with names of all scopes matching any of the changed files |
+| `base` | The Merge Queue-aware base SHA of the pull request |
+| `head` | The Merge Queue-aware head SHA of the pull request |
+
+A rejected upload does not fail the step — Mergify-side trouble must not break your CI. To surface dead ingest in your workflow, check the output explicitly:
+
+```yaml
+- uses: Mergifyio/gha-mergify-ci@v22
+  id: mergify-ci
+  with:
+    action: junit-process
+    token: ${{ secrets.MERGIFY_TOKEN }}
+    report_path: "**/junit*.xml"
+
+- if: steps.mergify-ci.outputs.test_results_upload == 'rejected'
+  run: |
+    echo "Test results upload was rejected — check the MERGIFY_TOKEN permissions."
+    exit 1
+```
