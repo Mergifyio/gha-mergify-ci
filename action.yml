@@ -50,9 +50,8 @@ inputs:
   mergify_cli_version:
     description: |
       Version of mergify-cli to install. Use `latest` to install the latest
-      released version without pinning.
-    # renovate: datasource=pypi depName=mergify-cli
-    default: 2026.6.8.1
+      released version without pinning. Leave unset to use the version pinned
+      by Mergifyio/setup-cli.
 outputs:
   test_results_upload:
     description: |
@@ -90,31 +89,20 @@ runs:
         echo "Valid actions are: junit-process, scopes, scopes-git-refs, scopes-upload, wait-jobs"
         exit 1
 
-    - name: Setup Python 🔧
-      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+    # Install the Mergify CLI through the shared setup-cli action. The version
+    # pin lives in Mergifyio/setup-cli (Renovate-managed there), so an unset
+    # mergify_cli_version must fall through to setup-cli's own default instead of
+    # being forwarded as an empty string, which setup-cli reads as "latest".
+    # Hence two variants: forward an explicit value, or call with no version.
+    - name: Setup Mergify CLI 🔧
+      if: inputs.mergify_cli_version != ''
+      uses: Mergifyio/setup-cli@2440cd0d54c1350f0a72b42952146c95b46d1623 # v1
       with:
-        python-version: "3.14"
+        mergify_cli_version: ${{ inputs.mergify_cli_version }}
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
-      with:
-        # mergify is too small to benefit + there is no version lock (so no cache key either)
-        enable-cache: false
-
-    - name: Install dependencies
-      shell: bash
-      env:
-        MERGIFY_CLI_VERSION: ${{ inputs.mergify_cli_version }}
-      run: |
-        if [ -z "$MERGIFY_CLI_VERSION" ] || [ "$MERGIFY_CLI_VERSION" = "latest" ]; then
-          # --upgrade implies --refresh, so uv re-resolves against PyPI and
-          # installs the newest release even on persistent self-hosted runners
-          # where an older mergify-cli is already cached.
-          uv tool install --upgrade mergify-cli
-        else
-          uv tool install "mergify-cli==$MERGIFY_CLI_VERSION"
-        fi
-        mergify --version
+    - name: Setup Mergify CLI (pinned default) 🔧
+      if: inputs.mergify_cli_version == ''
+      uses: Mergifyio/setup-cli@2440cd0d54c1350f0a72b42952146c95b46d1623 # v1
 
     - shell: bash
       id: junit-process
