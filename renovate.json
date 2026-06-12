@@ -11,38 +11,12 @@
   "lockFileMaintenance": { "enabled": true },
   "packageRules": [
     {
-      "matchDatasources": ["pypi"],
-      "matchPackageNames": ["mergify-cli"],
-      "minimumReleaseAge": "2 days"
-    },
-    {
-      "description": "Bump the self-referenced action version immediately: it is our own freshly-released major (README example + ci.yaml dogfooding), so the third-party stability wait is pointless.",
-      "matchDepNames": ["Mergifyio/gha-mergify-ci"],
+      "description": "Bump our own freshly-released majors immediately (Mergifyio/gha-mergify-ci self-reference + the Mergifyio/setup-cli action we consume), so the third-party stability wait is pointless.",
+      "matchDepNames": ["Mergifyio/gha-mergify-ci", "Mergifyio/setup-cli"],
       "minimumReleaseAge": "0"
     }
   ],
   "customManagers": [
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^action\\.yml$/"
-      ],
-      "matchStrings": [
-        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[a-z0-9-]+))?\\s+default:\\s*(?<currentValue>[^\\s]+)"
-      ]
-    },
-    {
-      "description": "Keep the auto-generated README inputs table in sync with the mergify_cli_version default in action.yml, so the bump PR lands both files in one go and the autodoc check passes.",
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^README\\.md$/"
-      ],
-      "matchStrings": [
-        "\\| `mergify_cli_version` \\| string \\| \\w+ \\| `(?<currentValue>[^`]+)` \\|"
-      ],
-      "datasourceTemplate": "pypi",
-      "depNameTemplate": "mergify-cli"
-    },
     {
       "description": "Bump the self-referenced action version pinned in the README usage example on each new gha-mergify-ci release.",
       "customType": "regex",
