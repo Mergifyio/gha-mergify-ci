@@ -28,6 +28,15 @@ inputs:
     description: Path of the files to upload
   scopes:
     description: Comma separated list of scopes to upload
+  all_scopes:
+    description: |
+      Declare that the pull request impacts all scopes (actions: scopes,
+      scopes-upload). The Merge Queue treats such a pull request as a
+      barrier: it conflicts with every scope, so it is never batched or
+      merged in parallel with other pull requests. Typical use: a
+      build-system or CI configuration change where enumerating every
+      impacted scope is brittle. Requires mergify-cli 2026.7.8.1 or newer.
+    default: "false"
   mergify_config_path:
     description: Path to the Mergify configuration file
   base:
@@ -154,8 +163,9 @@ runs:
       run: |
         set -euo pipefail
         FILE="$RUNNER_TEMP/mergify-scopes.json"
-        # Convert comma-separated SCOPES into a JSON array
-        SCOPES_JSON=$(jq -R -s 'rtrimstr("\n") | split(",")' <<< "$SCOPES")
+        # Convert comma-separated SCOPES into a JSON array; an empty input
+        # yields [] (an all_scopes pull request may carry no concrete scope)
+        SCOPES_JSON=$(jq -R -s 'rtrimstr("\n") | split(",") | map(select(length > 0))' <<< "$SCOPES")
         jq -n \
           --arg base "$BASE" \
           --arg head "$HEAD" \
@@ -183,7 +193,11 @@ runs:
         MERGIFY_TOKEN: ${{ inputs.token }}
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
         MERGIFY_CONFIG_PATH: ${{ inputs.mergify_config_path }}
-      run: mergify ci scopes-send --scopes-json $RUNNER_TEMP/mergify-scopes.json
+        ALL_SCOPES: ${{ inputs.all_scopes }}
+      run: |
+        args=(--scopes-json "$RUNNER_TEMP/mergify-scopes.json")
+        [ "$ALL_SCOPES" = "true" ] && args+=(--all)
+        mergify ci scopes-send "${args[@]}"
 
     - name: Wait jobs
       if: inputs.action == 'wait-jobs'
