@@ -1,0 +1,1 @@
+reference the exact mergify-cli release (2026.7.8.1, published while this PR was being opened) instead of 'newer than 2026.6.25.1'
