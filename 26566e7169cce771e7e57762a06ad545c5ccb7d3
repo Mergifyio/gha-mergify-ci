@@ -1,0 +1,1 @@
+fix the excluded rule ID: the registry ID is path+rule-name, so the segment is doubled
