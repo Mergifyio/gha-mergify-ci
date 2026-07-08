@@ -82,6 +82,19 @@ jobs:
           scopes: scope1,scope2
           mergify_config_path: zfixtures/mergify.yml
 
+      # all_scopes needs a mergify-cli newer than the setup-cli pin, hence
+      # mergify_cli_version: latest. No scopes input: an all-scopes pull
+      # request may carry no concrete scope, exercising the empty-list path.
+      - name: Trying action scopes-upload with all_scopes
+        id: scopes-upload-all
+        uses: ./
+        with:
+          action: scopes-upload
+          token: ${{ secrets.MERGIFY_TOKEN }}
+          all_scopes: true
+          mergify_config_path: zfixtures/mergify.yml
+          mergify_cli_version: latest
+
       - name: Trying action scopes
         id: scopes-detection
         uses: ./

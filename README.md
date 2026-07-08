@@ -21,6 +21,43 @@ Pin the action to a released version (see the [releases](https://github.com/Merg
 
 Need help setting it up? See the [GitHub Actions setup guide](https://docs.mergify.com/ci-insights/setup/github-actions/) on the Mergify docs.
 
+## Merge Queue scopes
+
+Scopes tell the Mergify Merge Queue which parts of the repository a pull
+request impacts, so batches with disjoint scopes can merge in parallel. Use
+`action: scopes` to detect them from the Mergify configuration file filters,
+or `action: scopes-upload` to upload a list you computed yourself (e.g. the
+leaf targets of your build graph):
+
+```yaml
+- uses: Mergifyio/gha-mergify-ci@v22
+  with:
+    action: scopes-upload
+    token: ${{ secrets.MERGIFY_TOKEN }}
+    scopes: backend,frontend
+```
+
+### Catch-all: declaring a pull request impacts all scopes
+
+Some pull requests impact everything — typically a build-system or CI
+configuration change — and enumerating every scope is brittle. Set
+`all_scopes: true` to declare it explicitly:
+
+```yaml
+- uses: Mergifyio/gha-mergify-ci@v22
+  with:
+    action: scopes-upload
+    token: ${{ secrets.MERGIFY_TOKEN }}
+    all_scopes: true
+```
+
+The Merge Queue treats such a pull request as a barrier: it conflicts with
+every scope, so it is never batched or merged in parallel with other pull
+requests. `all_scopes: true` works with both `action: scopes` and
+`action: scopes-upload`, with or without concrete `scopes`, and requires a
+mergify-cli version newer than 2026.6.25.1 (see the `mergify_cli_version`
+input if the pinned default is older).
+
 ## Inputs
 
 <!-- AUTO-DOC-INPUT:START - Do not remove or modify this section -->
@@ -28,6 +65,7 @@ Need help setting it up? See the [GitHub Actions setup guide](https://docs.mergi
 | Input | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `action` | string | false | `junit-process` | The Mergify CI action:<br>• junit-process: process JUnit XML files with Mergify CI Insights (Upload and Quarantine)<br>• scopes: detect and upload pull requests scopes to Mergify Merge Queue<br>• scopes-git-refs: return the base/head git references of the pull request in Merge Queue context<br>• scopes-upload: upload pull requests scopes to Mergify Merge Queue<br>• wait-jobs: wait for specified jobs to complete before proceeding |
+| `all_scopes` | string | false | `false` | Declare that the pull request impacts all scopes (actions: scopes, scopes-upload). The Merge Queue treats such a pull request as a barrier: it conflicts with every scope, so it is never batched or merged in parallel with other pull requests. Typical use: a build-system or CI configuration change where enumerating every impacted scope is brittle. Requires a mergify-cli version that supports `scopes-send --all` (newer than 2026.6.25.1). |
 | `base` | string | false |  | Base git reference for scope detection (action: scopes). Overrides the automatic push/pull-request detection. Leave unset to auto-detect. |
 | `head` | string | false |  | Head git reference for scope detection (action: scopes). Defaults to HEAD. Leave unset to auto-detect. |
 | `job_name` | string | false |  | Override the job name, must be used in case of matrix job to avoid having the same name for all jobs |
