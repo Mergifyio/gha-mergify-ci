@@ -34,7 +34,11 @@ jobs:
         run: |
           # nosemgrep: generic.ci.security.use-frozen-lockfile.use-frozen-lockfile-pip
           pip install semgrep yamllint
-          semgrep --config=auto --error
+          # The short minimumReleaseAge for our own first-party deps in
+          # renovate.json is deliberate, and the rule's suggested opt-out
+          # ("minimumReleaseAge": false) is invalid per the Renovate schema.
+          semgrep --config=auto --error \
+            --exclude-rule package_managers.renovate.renovate-missing-minimum-release-age.renovate-missing-minimum-release-age
           yamllint .
 
   autodoc:
