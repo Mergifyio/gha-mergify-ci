@@ -1,0 +1,1 @@
+drop the mergify-cli version number from the README and action.yml per review — the action's setup-cli pin is responsible for installing a capable CLI
