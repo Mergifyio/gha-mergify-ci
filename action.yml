@@ -105,13 +105,13 @@ runs:
     # Hence two variants: forward an explicit value, or call with no version.
     - name: Setup Mergify CLI 🔧
       if: inputs.mergify_cli_version != ''
-      uses: Mergifyio/setup-cli@2440cd0d54c1350f0a72b42952146c95b46d1623 # v1
+      uses: Mergifyio/setup-cli@8d75e33f675ccf0333866a1a972649e130a8a047 # v1.2.0
       with:
         mergify_cli_version: ${{ inputs.mergify_cli_version }}
 
     - name: Setup Mergify CLI (pinned default) 🔧
       if: inputs.mergify_cli_version == ''
-      uses: Mergifyio/setup-cli@2440cd0d54c1350f0a72b42952146c95b46d1623 # v1
+      uses: Mergifyio/setup-cli@8d75e33f675ccf0333866a1a972649e130a8a047 # v1.2.0
 
     - shell: bash
       id: junit-process
