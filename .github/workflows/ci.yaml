@@ -136,6 +136,23 @@ jobs:
           mergify_api_url: http://localhost:1080
           mergify_config_path: zfixtures/mergify.yml
 
+      # A report path that looks like a CLI option must stay an operand. The
+      # pattern needs a leading wildcard: a prefix-anchored one can never
+      # expand to a token starting with `-`.
+      - name: Prepare option-lookalike report fixture
+        run: |
+          mkdir -p './--api-url=http:_example.invalid'
+          cp zfixtures/junit_example.xml './--api-url=http:_example.invalid/junit_x.xml'
+
+      - name: Run action with an option-lookalike report path
+        uses: ./
+        with:
+          action: junit-process
+          token: fake-valid-token
+          report_path: "*/junit_x.xml"
+          mergify_api_url: http://localhost:1080
+          mergify_config_path: zfixtures/mergify.yml
+
       - name: Run action with error scenario ❌
         id: error500
         continue-on-error: true

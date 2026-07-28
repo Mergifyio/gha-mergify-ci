@@ -128,7 +128,11 @@ runs:
         FILES: ${{ inputs.report_path }}
       run: |
         set -x -e
-        mergify ci junit-process ${FILES}
+        if [ -z "$FILES" ]; then
+          echo "::error::report_path is required for action: junit-process"
+          exit 1
+        fi
+        mergify ci junit-process -- "$FILES"
 
     - name: Detect head sha and base sha
       if: inputs.action == 'scopes-git-refs' || inputs.action == 'scopes-upload'
