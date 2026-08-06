@@ -1,6 +1,6 @@
 services:
   mockServer:
-    image: mockserver/mockserver:7.4.0@sha256:fed9b2089e021947f785d1f0bfda3723352bb2c1634ce7b0bcd42dfd1b0fd02f
+    image: mockserver/mockserver:7.5.0@sha256:a268c84e2e3a8a0682b9771f37ed0f201ea9ec921ef05b945be80e52eedf6f55
     command: -logLevel DEBUG
     ports:
       - 1080:1080
@@ -11,7 +11,7 @@ services:
         source: zfixtures
         target: /config
   mockServerError:
-    image: mockserver/mockserver:7.4.0@sha256:fed9b2089e021947f785d1f0bfda3723352bb2c1634ce7b0bcd42dfd1b0fd02f
+    image: mockserver/mockserver:7.5.0@sha256:a268c84e2e3a8a0682b9771f37ed0f201ea9ec921ef05b945be80e52eedf6f55
     command: -logLevel DEBUG
     ports:
       - 1085:1080
