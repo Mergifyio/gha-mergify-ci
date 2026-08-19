@@ -119,7 +119,7 @@ runs:
       env:
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
         MERGIFY_TOKEN: ${{ inputs.token }}
-        MERGIFY_JOB_NAME: ${{ inputs.job_name }}
+        MERGIFY_TEST_JOB_NAME: ${{ inputs.job_name }}
         MERGIFY_TEST_EXIT_CODE: >-
           ${{ inputs.test_step_outcome == 'success' && '0'
           || (inputs.test_step_outcome == 'failure'
