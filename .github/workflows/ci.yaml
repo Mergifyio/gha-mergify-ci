@@ -135,6 +135,38 @@ jobs:
           report_path: zfixtures/*.xml
           mergify_api_url: http://localhost:1080
           mergify_config_path: zfixtures/mergify.yml
+          job_name: job-name-input-probe
+
+      # job_name has no locally observable effect: it either reaches the
+      # upload as the mergify.test.job.name span attribute, or it does
+      # nothing at all. It did nothing from the day it was added until
+      # MRGFY-8734, because it was wired to an env var the CLI never reads,
+      # and only the uploaded payload tells the two apart. The payload is
+      # OTLP protobuf; attribute keys and values are plain UTF-8 inside it,
+      # so grepping the decoded bytes is enough.
+      - name: Verify job_name reached the upload
+        env:
+          JOB_NAME: job-name-input-probe
+        run: |
+          set -euo pipefail
+          curl -sf -X PUT \
+            "http://localhost:1080/mockserver/retrieve?type=REQUESTS&format=json" \
+            -d "{}" > "$RUNNER_TEMP/requests.json"
+          found=0
+          n=0
+          for payload in $(jq -r '.[].body.base64Bytes // empty' "$RUNNER_TEMP/requests.json"); do
+            n=$((n + 1))
+            body="$RUNNER_TEMP/payload-$n.bin"
+            printf '%s' "$payload" | base64 -d > "$body"
+            if grep -aq "mergify.test.job.name" "$body" \
+              && grep -aq "$JOB_NAME" "$body"; then
+              found=1
+            fi
+          done
+          if [ "$found" -ne 1 ]; then
+            echo "::error::job_name did not reach the upload as mergify.test.job.name"
+            exit 1
+          fi
 
       # A report path that looks like a CLI option must stay an operand. The
       # pattern needs a leading wildcard: a prefix-anchored one can never
