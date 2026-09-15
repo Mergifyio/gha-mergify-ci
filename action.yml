@@ -113,13 +113,18 @@ runs:
       if: inputs.mergify_cli_version == ''
       uses: Mergifyio/setup-cli@dc99f07e699b94b39e5495c24596372813eadcbc # v1.3.0
 
+    # A step-level env entry that evaluates to '' is still exported, and it
+    # shadows the caller's job-level or step-level MERGIFY_TEST_JOB_NAME (and
+    # anything written to $GITHUB_ENV). Fall back to the caller's value so an
+    # omitted job_name input leaves that override intact; the input wins when
+    # both are set.
     - shell: bash
       id: junit-process
       if: inputs.action == 'junit-process'
       env:
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
         MERGIFY_TOKEN: ${{ inputs.token }}
-        MERGIFY_TEST_JOB_NAME: ${{ inputs.job_name }}
+        MERGIFY_TEST_JOB_NAME: ${{ inputs.job_name || env.MERGIFY_TEST_JOB_NAME }}
         MERGIFY_TEST_EXIT_CODE: >-
           ${{ inputs.test_step_outcome == 'success' && '0'
           || (inputs.test_step_outcome == 'failure'
