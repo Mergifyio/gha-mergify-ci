@@ -1,0 +1,7 @@
+self-hosted-runner:
+  # Despite the key name, these are GitHub-hosted labels: no actionlint
+  # release (up to 1.7.12) knows ubuntu-26.04 yet, so without this entry the
+  # linters job rejects every job with "label is unknown". Drop it once
+  # actionlint ships the label.
+  labels:
+    - ubuntu-26.04
