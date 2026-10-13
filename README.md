@@ -82,7 +82,7 @@ requests. `all_scopes: true` works with both `action: scopes` and
 
 | Output | Description |
 | --- | --- |
-| `test_results_upload` | Outcome of the JUnit test-results upload to Mergify Test Insights (action: junit-process): `success`, `rejected` (the API refused the upload, e.g. a token without CI Insights access — no test data was recorded) or `failed` (transient upload error). Empty when the junit-process step did not run or the installed mergify-cli predates this output. |
+| `test_results_upload` | Outcome of the JUnit test-results upload to Mergify Test Engine (action: junit-process): `success`, `rejected` (the API refused the upload, e.g. a token without CI Insights access — no test data was recorded) or `failed` (transient upload error). Empty when the junit-process step did not run or the installed mergify-cli predates this output. |
 | `scopes` | Stringified JSON mapping with names of all scopes matching any of the changed files |
 | `base` | The Merge Queue-aware base SHA of the pull request |
 | `head` | The Merge Queue-aware head SHA of the pull request |
