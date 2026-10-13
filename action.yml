@@ -64,7 +64,7 @@ inputs:
 outputs:
   test_results_upload:
     description: |
-      Outcome of the JUnit test-results upload to Mergify Test Insights
+      Outcome of the JUnit test-results upload to Mergify Test Engine
       (action: junit-process): 'success', 'rejected' (the API refused the
       upload, e.g. a token without CI Insights access — no test data was
       recorded) or 'failed' (transient upload error). Empty when the
