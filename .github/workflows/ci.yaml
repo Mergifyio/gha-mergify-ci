@@ -65,6 +65,7 @@ jobs:
 
 
   test-scopes:
+    timeout-minutes: 5
     runs-on: ubuntu-26.04
     steps:
       - name: Checkout 🛎️
@@ -97,6 +98,50 @@ jobs:
           all_scopes: true
           mergify_config_path: zfixtures/mergify.yml
 
+      # The uploads above reach the real API whichever route the CLI picks.
+      # Against the mock, only the commit route on the pull request's head
+      # SHA (the event payload's, not GITHUB_SHA, which is the merge commit)
+      # answers: anything else, the CLI's fallback to the deprecated pull
+      # request route included, gets a 404 and fails the step.
+      - name: Expect the scopes on the pull request head commit
+        env:
+          REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          docker compose up -d mockServer
+          jq -n --arg path "/v1/repos/$REPOSITORY/commits/$HEAD_SHA/scopes" '{
+            method: "PUT",
+            path: $path,
+            headers: {Authorization: ["Bearer fake-valid-token"]},
+            body: {
+              type: "JSON",
+              json: {scopes: ["scope1", "scope2"], all_scopes: false}
+            }
+          }' > "$RUNNER_TEMP/scopes-request.json"
+          jq '{httpRequest: ., httpResponse: {statusCode: 200}}' \
+            "$RUNNER_TEMP/scopes-request.json" \
+            | curl -sf --retry 10 --retry-all-errors --retry-delay 1 \
+              -X PUT http://localhost:1080/mockserver/expectation -d @-
+
+      - name: Trying action scopes-upload on the commit route
+        uses: ./
+        with:
+          action: scopes-upload
+          token: fake-valid-token
+          scopes: scope1,scope2
+          mergify_api_url: http://localhost:1080
+          mergify_config_path: zfixtures/mergify.yml
+
+      # The upload is skipped, not failed, when its `if:` does not hold, and
+      # the CLI exits 0 when it finds no pull request: require the request.
+      - name: Verify the scopes reached the commit route once
+        run: |
+          jq '{httpRequest: ., times: {atLeast: 1, atMost: 1}}' \
+            "$RUNNER_TEMP/scopes-request.json" \
+            | curl -sS --fail-with-body \
+              -X PUT http://localhost:1080/mockserver/verify -d @-
+
       - name: Trying action scopes
         id: scopes-detection
         uses: ./
@@ -114,6 +159,10 @@ jobs:
           echo "SCOPES: $SCOPES"
           test "$EVERYTHING" == "true"
           test "$EVERYTHING_BOOL" == "true"
+
+      - name: Dump mockserver logs
+        if: failure()
+        run: docker compose logs mockServer
 
   test-junit:
     timeout-minutes: 5
