@@ -1,0 +1,134 @@
+name: Release
+permissions: {}
+
+on:
+  push:
+    branches:
+      - main
+  # A dry run: prints the release a push of the dispatched ref would cut.
+  workflow_dispatch:
+
+concurrency:
+  # A group keeps one pending run and cancels the one it replaces, so a dry
+  # run must not share the group of the push runs.
+  group: ${{ github.workflow }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    timeout-minutes: 5
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' }}
+    steps:
+      # Every release is a new immutable major (v1 to v27 were cut by hand, and
+      # the repository enforces immutable releases, so no tag can move). The
+      # CLI is what users of the action run, and it reaches them only through a
+      # release, so a new Mergifyio/setup-cli pin is released as soon as it
+      # lands. Other changes wait for a hand release, or ship with the next pin
+      # bump if it comes first.
+      - name: Release main if its Mergifyio/setup-cli pin is not released
+        run: |
+          set -euo pipefail
+          # Prints action.yml of repository $1 at ref $2.
+          action_yml() {
+            gh api "repos/$1/contents/action.yml?ref=$2" -H "Accept: application/vnd.github.raw"
+          }
+          # Prints "<sha> <version comment>" of the setup-cli pin of action.yml
+          # at $1. Both setup-cli steps must pin the same commit.
+          setup_cli_pin() {
+            local pins
+            pins=$(
+              action_yml "$REPO" "$1" \
+                | yq '.runs.steps[].uses
+                  | select(. // "" | test("^Mergifyio/setup-cli@"))
+                  | sub("^Mergifyio/setup-cli@"; "") + " " + line_comment'
+            ) || pins=""
+            if [ -z "$pins" ] || [ "$(cut -d " " -f 1 <<< "$pins" | sort -u | wc -l)" -ne 1 ]; then
+              echo "::error::Expected one Mergifyio/setup-cli pin in action.yml at $1, got: ${pins:-none}" >&2
+              exit 1
+            fi
+            head -n 1 <<< "$pins"
+          }
+          default_cli() {
+            action_yml Mergifyio/setup-cli "$1" \
+              | yq -e '.inputs.mergify_cli_version.default | select(. != "")' || {
+              echo "::error::No inputs.mergify_cli_version.default in Mergifyio/setup-cli at $1" >&2
+              exit 1
+            }
+          }
+
+          current=$(setup_cli_pin "$GITHUB_SHA")
+          read -r pin version <<< "$current"
+
+          # Compare against the latest release rather than this push's diff:
+          # a run that failed, or a push carrying several commits, is caught
+          # up by the next push to main.
+          latest=$(
+            gh api --paginate "repos/$REPO/releases" \
+              --jq '.[] | select((.draft or .prerelease) | not) | .tag_name
+                | select(test("^v[0-9]+$")) | ltrimstr("v")' \
+              | sort -n | tail -n 1
+          )
+          if [ -z "$latest" ]; then
+            echo "::error::No published vN release found"
+            exit 1
+          fi
+          next="v$((latest + 1))"
+          latest="v$latest"
+
+          released=$(setup_cli_pin "$latest")
+          read -r released_pin released_version <<< "$released"
+          if [ "$pin" = "$released_pin" ]; then
+            echo "$latest already pins Mergifyio/setup-cli ${version:-$pin}" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # A re-run of an older push must not release a commit the latest
+          # release already contains, or one off its history.
+          status=$(gh api "repos/$REPO/compare/$latest...$GITHUB_SHA" --jq .status)
+          if [ "$status" != ahead ]; then
+            echo "$GITHUB_SHA is not ahead of $latest ($status): nothing to release" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # On an existing tag the API ignores --target and publishes the
+          # release on whatever commit that tag points at. A draft has no tag
+          # yet, and publishing over it would leave it unpublishable.
+          if gh api "repos/$REPO/git/ref/tags/$next" > /dev/null 2>&1 \
+            || gh release view "$next" --repo "$REPO" > /dev/null 2>&1; then
+            echo "::error::A $next tag or draft release exists: publish or delete it"
+            exit 1
+          fi
+
+          cli=$(default_cli "$pin")
+          released_cli=$(default_cli "$released_pin")
+          if [ "$cli" = "$released_cli" ]; then
+            was="as $latest did"
+          else
+            was="was $released_cli in $latest"
+          fi
+          generated=$(
+            gh api -X POST "repos/$REPO/releases/generate-notes" \
+              -f tag_name="$next" -f target_commitish="$GITHUB_SHA" \
+              -f previous_tag_name="$latest" --jq .body
+          )
+          notes="Installs [mergify-cli $cli](https://github.com/Mergifyio/mergify-cli/releases/tag/$cli) by default ($was), through Mergifyio/setup-cli ${version:-$pin} (was ${released_version:-$released_pin}).
+
+          $generated"
+          if [ "$DRY_RUN" = true ]; then
+            {
+              echo "Dry run: would release $next at $GITHUB_SHA with these notes:"
+              echo
+              echo "$notes"
+            } | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          gh release create "$next" --repo "$REPO" --target "$GITHUB_SHA" \
+            --title "$next" --notes "$notes"
+          echo "Released $next at $GITHUB_SHA" | tee -a "$GITHUB_STEP_SUMMARY"
