@@ -27,7 +27,11 @@ inputs:
   report_path:
     description: Path of the files to upload
   scopes:
-    description: Comma separated list of scopes to upload
+    description: |
+      Comma separated list of scopes to upload (actions: scopes,
+      scopes-upload). With action: scopes, they are added to the scopes
+      detected from the changed files and sent in the same report, e.g. the
+      scopes your build tool knows on top of the configuration file filters.
   all_scopes:
     description: |
       Declare that the pull request impacts all scopes (actions: scopes,
@@ -204,9 +208,23 @@ runs:
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
         MERGIFY_CONFIG_PATH: ${{ inputs.mergify_config_path }}
         ALL_SCOPES: ${{ inputs.all_scopes }}
+        ACTION: ${{ inputs.action }}
+        SCOPES: ${{ inputs.scopes }}
       run: |
+        set -euo pipefail
         args=(--scopes-json "$RUNNER_TEMP/mergify-scopes.json")
-        [ "$ALL_SCOPES" = "true" ] && args+=(--all)
+        # A report replaces the previous one for the same commit, so the
+        # extra scopes of action: scopes go in the detection's report rather
+        # than in a report of their own. scopes-upload already wrote SCOPES
+        # into the JSON file. The CLI trims each line and skips empty ones.
+        if [ "$ACTION" = "scopes" ] && [ -n "$SCOPES" ]; then
+          EXTRA="$RUNNER_TEMP/mergify-extra-scopes.txt"
+          tr ',' '\n' <<< "$SCOPES" > "$EXTRA"
+          args+=(--scopes-file "$EXTRA")
+        fi
+        if [ "$ALL_SCOPES" = "true" ]; then
+          args+=(--all)
+        fi
         mergify ci scopes-send "${args[@]}"
 
     - name: Wait jobs
