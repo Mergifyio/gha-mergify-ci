@@ -142,6 +142,46 @@ jobs:
             | curl -sS --fail-with-body \
               -X PUT http://localhost:1080/mockserver/verify -d @-
 
+      # zfixtures/mergify.yml detects `everything` for any change. The extra
+      # scopes must reach the commit route in the same report as the detected
+      # one: the mock answers only that body, so a separate report for either
+      # half gets a 404 and fails the step.
+      - name: Expect the detected and extra scopes on the pull request head commit
+        env:
+          REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          jq -n --arg path "/v1/repos/$REPOSITORY/commits/$HEAD_SHA/scopes" '{
+            method: "PUT",
+            path: $path,
+            headers: {Authorization: ["Bearer fake-valid-token"]},
+            body: {
+              type: "JSON",
+              json: {scopes: ["everything", "lib-a", "lib-b"], all_scopes: false}
+            }
+          }' > "$RUNNER_TEMP/extra-scopes-request.json"
+          jq '{httpRequest: ., httpResponse: {statusCode: 200}}' \
+            "$RUNNER_TEMP/extra-scopes-request.json" \
+            | curl -sf -X PUT http://localhost:1080/mockserver/expectation -d @-
+
+      # Blank entries and spaces around names are dropped.
+      - name: Trying action scopes with extra scopes on the commit route
+        uses: ./
+        with:
+          action: scopes
+          token: fake-valid-token
+          scopes: " lib-a, ,lib-b "
+          mergify_api_url: http://localhost:1080
+          mergify_config_path: zfixtures/mergify.yml
+
+      - name: Verify the detected and extra scopes reached the commit route in one report
+        run: |
+          jq '{httpRequest: ., times: {atLeast: 1, atMost: 1}}' \
+            "$RUNNER_TEMP/extra-scopes-request.json" \
+            | curl -sS --fail-with-body \
+              -X PUT http://localhost:1080/mockserver/verify -d @-
+
       - name: Trying action scopes
         id: scopes-detection
         uses: ./

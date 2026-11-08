@@ -37,6 +37,25 @@ leaf targets of your build graph):
     scopes: backend,frontend
 ```
 
+### Adding scopes to the detected ones
+
+When something outside the configuration file filters knows more scopes
+(e.g. your build tool), pass them to `action: scopes` with `scopes`. The
+action sends one report with the scopes detected from the changed files plus
+these:
+
+```yaml
+- uses: Mergifyio/gha-mergify-ci@v28
+  with:
+    action: scopes
+    token: ${{ secrets.MERGIFY_TOKEN }}
+    scopes: ${{ steps.build-graph.outputs.scopes }}
+```
+
+Send them this way rather than from a second step: each report replaces the
+previous one for the same commit, so an `action: scopes` step followed by an
+`action: scopes-upload` step keeps only the uploaded scopes.
+
 ### Catch-all: declaring a pull request impacts all scopes
 
 Some pull requests impact everything — typically a build-system or CI
@@ -72,7 +91,7 @@ requests. `all_scopes: true` works with both `action: scopes` and
 | `mergify_cli_version` | string | false |  | Version of mergify-cli to install. Use `latest` to install the latest released version without pinning. Leave unset to use the version pinned by Mergifyio/setup-cli. |
 | `mergify_config_path` | string | false |  | Path to the Mergify configuration file |
 | `report_path` | string | false |  | Path of the files to upload |
-| `scopes` | string | false |  | Comma separated list of scopes to upload |
+| `scopes` | string | false |  | Comma separated list of scopes to upload (actions: scopes, scopes-upload). With action: scopes, they are added to the scopes detected from the changed files and sent in the same report, e.g. the scopes your build tool knows on top of the configuration file filters. |
 | `test_step_outcome` | string | false |  | Outcome of the test runner step (e.g. steps.<id>.outcome). Pass this to detect silent failures where the test runner crashed but the JUnit report appears clean. Values: 'success', 'failure', 'cancelled', 'skipped', or omit entirely. 'skipped' is treated the same as omitting this input. |
 | `token` | string | false |  | Mergify CI token |
 
