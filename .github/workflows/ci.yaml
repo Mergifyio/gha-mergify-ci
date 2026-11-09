@@ -67,9 +67,37 @@ jobs:
   test-scopes:
     timeout-minutes: 5
     runs-on: ubuntu-26.04
+    # The steps without a token reach the real Mergify API with the token the
+    # CLI gets for the job's ID token.
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # When Mergify gives the job no token, the scopes upload warns and
+      # carries on, so those steps would pass having sent nothing: require
+      # the exchange here. A pull request from a fork gets no ID token.
+      - name: Require Mergify to give this job a token for its ID token
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          set -euo pipefail
+          id_token=$(
+            curl -sSf -G "$ACTIONS_ID_TOKEN_REQUEST_URL" \
+              --data-urlencode audience=https://api.mergify.com \
+              -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+              | jq -r .value
+          )
+          echo "::add-mask::$id_token"
+          answer=$(
+            jq -n --arg id_token "$id_token" '{id_token: $id_token}' \
+              | curl -sS --fail-with-body -H "Content-Type: application/json" \
+                --data @- https://api.mergify.com/v1/ci/oidc/exchange
+          ) || {
+            echo "::error::Mergify gave this job no token for its ID token: $answer"
+            exit 1
+          }
 
       - name: Trying action scopes-git-refs
         id: scopes-git-refs
@@ -83,7 +111,6 @@ jobs:
         uses: ./
         with:
           action: scopes-upload
-          token: ${{ secrets.MERGIFY_TOKEN }}
           scopes: scope1,scope2
           mergify_config_path: zfixtures/mergify.yml
 
@@ -94,7 +121,6 @@ jobs:
         uses: ./
         with:
           action: scopes-upload
-          token: ${{ secrets.MERGIFY_TOKEN }}
           all_scopes: true
           mergify_config_path: zfixtures/mergify.yml
 
@@ -187,7 +213,6 @@ jobs:
         uses: ./
         with:
           action: scopes
-          token: ${{ secrets.MERGIFY_TOKEN }}
           mergify_config_path: zfixtures/mergify.yml
 
       - name: Check scopes
@@ -199,6 +224,159 @@ jobs:
           echo "SCOPES: $SCOPES"
           test "$EVERYTHING" == "true"
           test "$EVERYTHING_BOOL" == "true"
+
+      - name: Dump mockserver logs
+        if: failure()
+        run: docker compose logs mockServer
+
+  # The action hands the CLI no token of its own: the CLI exchanges the job's
+  # ID token, and carries on when Mergify gives it none. The mock stands in
+  # for GitHub's ID token service as well, so that no real ID token is minted
+  # and written to the mock's logs.
+  test-id-token:
+    timeout-minutes: 5
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    env:
+      ACTIONS_ID_TOKEN_REQUEST_URL: http://localhost:1080/github-id-token?api-version=2.0
+      ACTIONS_ID_TOKEN_REQUEST_TOKEN: fake-request-token
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # The mock answers the job's exchanges in turn with a token, a refusal,
+      # and the answer of an organization without the exchange. It takes the
+      # scopes with the exchanged token or the job's own only.
+      - name: Expect three exchanges and two scopes reports
+        env:
+          REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          docker compose up -d mockServer
+          expect() {
+            curl -sf --retry 10 --retry-all-errors --retry-delay 1 \
+              -X PUT http://localhost:1080/mockserver/expectation -d @-
+          }
+          # The audience is the Mergify API URL.
+          jq -n '{
+            httpRequest: {
+              method: "GET",
+              path: "/github-id-token",
+              queryStringParameters: {
+                "api-version": ["2.0"],
+                audience: ["http://localhost:1080"]
+              },
+              headers: {Authorization: ["Bearer fake-request-token"]}
+            },
+            httpResponse: {
+              statusCode: 200,
+              headers: {"Content-Type": ["application/json"]},
+              body: ({value: "fake-id-token"} | tojson)
+            }
+          }' | expect
+          exchange() {
+            jq -n --argjson priority "$1" --argjson status "$2" \
+              --argjson answer "$3" '{
+              httpRequest: {
+                method: "POST",
+                path: "/v1/ci/oidc/exchange",
+                body: {type: "JSON", json: {id_token: "fake-id-token"}}
+              },
+              httpResponse: {
+                statusCode: $status,
+                headers: {"Content-Type": ["application/json"]},
+                body: ($answer | tojson)
+              },
+              times: {remainingTimes: 1},
+              priority: $priority
+            }' | expect
+          }
+          exchange 2 200 '{"token": "mrt_exchanged", "expires_in": 3600}'
+          exchange 1 403 '{
+            "detail": "No trust policy of the organization matches the CI job.",
+            "error_code": "CI_ID_TOKEN_NO_MATCHING_TRUST_POLICY"
+          }'
+          exchange 0 403 '{
+            "detail": "This organization cannot authenticate its CI jobs with an ID token.",
+            "error_code": "CI_ID_TOKEN_EXCHANGE_NOT_ENABLED"
+          }'
+          for token in mrt_exchanged job-token; do
+            jq -n --arg path "/v1/repos/$REPOSITORY/commits/$HEAD_SHA/scopes" \
+              --arg token "$token" '{
+              method: "PUT",
+              path: $path,
+              headers: {Authorization: ["Bearer \($token)"]}
+            }' > "$RUNNER_TEMP/scopes-$token.json"
+            jq '{httpRequest: ., httpResponse: {statusCode: 200}}' \
+              "$RUNNER_TEMP/scopes-$token.json" | expect
+          done
+
+      - name: Trying action scopes-upload with the job's ID token
+        uses: ./
+        with:
+          action: scopes-upload
+          scopes: scope1,scope2
+          mergify_api_url: http://localhost:1080
+          mergify_config_path: zfixtures/mergify.yml
+
+      # The empty input must not shadow it.
+      - name: Trying action scopes with the job's MERGIFY_TOKEN
+        uses: ./
+        env:
+          MERGIFY_TOKEN: job-token
+        with:
+          action: scopes
+          mergify_api_url: http://localhost:1080
+          mergify_config_path: zfixtures/mergify.yml
+
+      # A job not granted `id-token: write`: the action warns, the CLI does
+      # not run.
+      - name: Trying action scopes-upload without an ID token
+        uses: ./
+        env:
+          ACTIONS_ID_TOKEN_REQUEST_URL: ""
+        with:
+          action: scopes-upload
+          scopes: scope1,scope2
+          mergify_api_url: http://localhost:1080
+          mergify_config_path: zfixtures/mergify.yml
+
+      - name: Trying action scopes-upload with a refused exchange
+        uses: ./
+        with:
+          action: scopes-upload
+          scopes: scope1,scope2
+          mergify_api_url: http://localhost:1080
+          mergify_config_path: zfixtures/mergify.yml
+
+      - name: Trying action scopes with an exchange Mergify does not offer
+        uses: ./
+        with:
+          action: scopes
+          mergify_api_url: http://localhost:1080
+          mergify_config_path: zfixtures/mergify.yml
+
+      - name: Verify the exchanges and the reports
+        run: |
+          set -euo pipefail
+          verify() {
+            curl -sS --fail-with-body \
+              -X PUT http://localhost:1080/mockserver/verify -d @-
+          }
+          jq -n '{
+            httpRequest: {method: "POST", path: "/v1/ci/oidc/exchange"},
+            times: {atLeast: 3, atMost: 3}
+          }' | verify
+          for token in mrt_exchanged job-token; do
+            jq '{httpRequest: ., times: {atLeast: 1, atMost: 1}}' \
+              "$RUNNER_TEMP/scopes-$token.json" | verify
+          done
+          if [ -n "${MERGIFY_TOKEN:-}" ]; then
+            echo "::error::The action exported MERGIFY_TOKEN to the job"
+            exit 1
+          fi
 
       - name: Dump mockserver logs
         if: failure()
@@ -322,6 +500,7 @@ jobs:
       - linters
       - autodoc
       - test-scopes
+      - test-id-token
       - test-junit
       - test-wait-jobs
     runs-on: ubuntu-26.04
