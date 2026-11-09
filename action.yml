@@ -109,13 +109,13 @@ runs:
     # Hence two variants: forward an explicit value, or call with no version.
     - name: Setup Mergify CLI 🔧
       if: inputs.mergify_cli_version != ''
-      uses: Mergifyio/setup-cli@7816afe056a19ad5eb899d903f199ba2626f9de5 # v1.4.0
+      uses: Mergifyio/setup-cli@f4029a9e48b04e184138fdb17df2b27eb035d8bf # v1.5.0
       with:
         mergify_cli_version: ${{ inputs.mergify_cli_version }}
 
     - name: Setup Mergify CLI (pinned default) 🔧
       if: inputs.mergify_cli_version == ''
-      uses: Mergifyio/setup-cli@7816afe056a19ad5eb899d903f199ba2626f9de5 # v1.4.0
+      uses: Mergifyio/setup-cli@f4029a9e48b04e184138fdb17df2b27eb035d8bf # v1.5.0
 
     # A step-level env entry that evaluates to '' is still exported, and it
     # shadows the caller's job-level or step-level MERGIFY_TEST_JOB_NAME (and
