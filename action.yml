@@ -16,7 +16,11 @@ inputs:
     # Backward compat
     default: junit-process
   token:
-    description: Mergify CI token
+    description: |
+      Mergify application key with the `ci` scope. Defaults to the job's
+      MERGIFY_TOKEN. Without either, a job granted `id-token: write`
+      exchanges its GitHub ID token for a Mergify token, exported as
+      MERGIFY_TOKEN for the following steps of the job.
   mergify_api_url:
     description: URL of the Mergify API
     default: https://api.mergify.com
@@ -117,6 +121,100 @@ runs:
       if: inputs.mergify_cli_version == ''
       uses: Mergifyio/setup-cli@f4029a9e48b04e184138fdb17df2b27eb035d8bf # v1.5.0
 
+    # The token input, else the job's MERGIFY_TOKEN, else the job's GitHub ID
+    # token exchanged for a Mergify token, exported as MERGIFY_TOKEN so that
+    # the following steps of the job reach Mergify too, whatever client they
+    # run. An exchanged token (Mergify prefixes them `mrt_`) expires after an
+    # hour: one an earlier step exported is exchanged again, and dropped when
+    # that fails. The steps below read the step's output, since a composite's
+    # later steps may not see its own GITHUB_ENV writes. Never fails: without
+    # a token, they do what they always did without one. Scopes are only
+    # sent for a pull request: a push job neither exchanges nor warns.
+    - name: Get a Mergify token
+      id: mergify-token
+      if: |
+        inputs.action == 'junit-process' ||
+        ((inputs.action == 'scopes' || inputs.action == 'scopes-upload') &&
+         github.event.pull_request)
+      shell: bash
+      env:
+        TOKEN_INPUT: ${{ inputs.token }}
+        MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
+      run: |
+        # The runner's `bash -e` would turn any failed command into a failed
+        # action.
+        set +e -uo pipefail
+        body="$RUNNER_TEMP/mergify-id-token-exchange.json"
+        trap 'rm -f "$body"' EXIT
+        http() {
+          curl -sS --connect-timeout 10 --max-time 20 --retry 2 \
+            -o "$body" -w "%{http_code}" "$@"
+        }
+        # -j: no trailing newline, which jq writes as CRLF on Windows.
+        field() {
+          jq -j "$1" "$body" 2> /dev/null
+        }
+
+        # Sets `exchanged`, or warns why there is none. Silent when Mergify
+        # does not offer the exchange (a Mergify or an organization without
+        # it): the job is then one without a token.
+        exchange_id_token() {
+          exchanged=
+          if ! command -v jq > /dev/null; then
+            echo "::warning::jq is not installed, so this job cannot exchange its ID token for a Mergify token"
+            return
+          fi
+          # The audience: the API URL as the CLI defaults and Mergify reads it.
+          local api_url=${MERGIFY_API_URL:-https://api.mergify.com}
+          while [[ $api_url == */ ]]; do api_url=${api_url%/}; done
+          local status id_token error_code detail
+          # The request token mints ID tokens until the job ends: it goes
+          # through stdin, out of process arguments, as the ID token does.
+          status=$(printf 'Authorization: Bearer %s' "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            | http -G "$ACTIONS_ID_TOKEN_REQUEST_URL" \
+              --data-urlencode "audience=$api_url" -H @-) || status=000
+          id_token=$(field '.value // empty')
+          if [ "$status" != 200 ] || [ -z "$id_token" ]; then
+            echo "::warning::GitHub Actions gave this job no ID token (HTTP $status), so it has no Mergify token"
+            return
+          fi
+          echo "::add-mask::$id_token"
+          status=$(printf '{"id_token": "%s"}' "$id_token" \
+            | http -H "Content-Type: application/json" --data @- \
+              "$api_url/v1/ci/oidc/exchange") || status=000
+          if [ "$status" = 200 ]; then
+            exchanged=$(field '.token // empty')
+            # It goes to GITHUB_ENV, one NAME=value per line.
+            if [[ $exchanged =~ ^[A-Za-z0-9._~+/=-]+$ ]]; then
+              echo "::add-mask::$exchanged"
+              return
+            fi
+            exchanged=
+          fi
+          error_code=$(field '.error_code? // empty')
+          if [ "$error_code" = CI_ID_TOKEN_EXCHANGE_NOT_ENABLED ] \
+            || { [ "$status" = 404 ] && [ -z "$error_code" ]; }; then
+            return
+          fi
+          detail=$(field '.detail? // empty
+            | if type == "string" then . else tojson end
+            | gsub("%"; "%25") | gsub("\r"; "%0D") | gsub("\n"; "%0A")')
+          echo "::warning::Mergify did not exchange this job's ID token for a token (HTTP $status)${detail:+: $detail}"
+        }
+
+        token=${TOKEN_INPUT:-${MERGIFY_TOKEN:-}}
+        # Only a job granted `id-token: write` can ask for an ID token.
+        if [ -z "$TOKEN_INPUT" ] && [[ -z $token || $token == mrt_* ]] \
+          && [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] \
+          && [ -n "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
+          exchange_id_token
+          token=$exchanged
+          if [ -n "$token" ]; then
+            echo "MERGIFY_TOKEN=$token" >> "$GITHUB_ENV"
+          fi
+        fi
+        echo "token=$token" >> "$GITHUB_OUTPUT"
+
     # A step-level env entry that evaluates to '' is still exported, and it
     # shadows the caller's job-level or step-level MERGIFY_TEST_JOB_NAME (and
     # anything written to $GITHUB_ENV). Fall back to the caller's value so an
@@ -127,7 +225,7 @@ runs:
       if: inputs.action == 'junit-process'
       env:
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
-        MERGIFY_TOKEN: ${{ inputs.token }}
+        MERGIFY_TOKEN: ${{ steps.mergify-token.outputs.token }}
         MERGIFY_TEST_JOB_NAME: ${{ inputs.job_name || env.MERGIFY_TEST_JOB_NAME }}
         MERGIFY_TEST_EXIT_CODE: >-
           ${{ inputs.test_step_outcome == 'success' && '0'
@@ -192,19 +290,19 @@ runs:
     - name: Warn if token is unset for scopes upload
       shell: bash
       if: |
-        !inputs.token &&
-        (inputs.action == 'scopes' ||
-         (inputs.action == 'scopes-upload' && github.event.pull_request))
+        !steps.mergify-token.outputs.token &&
+        (inputs.action == 'scopes' || inputs.action == 'scopes-upload') &&
+        github.event.pull_request
       run: echo "::warning::Mergify token is not set, scopes will not be sent to Mergify API"
 
     - name: Upload scopes to Mergify API
       shell: bash
       if: |
-        inputs.token &&
-        (inputs.action == 'scopes' ||
-         (inputs.action == 'scopes-upload' && github.event.pull_request))
+        steps.mergify-token.outputs.token &&
+        (inputs.action == 'scopes' || inputs.action == 'scopes-upload') &&
+        github.event.pull_request
       env:
-        MERGIFY_TOKEN: ${{ inputs.token }}
+        MERGIFY_TOKEN: ${{ steps.mergify-token.outputs.token }}
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
         MERGIFY_CONFIG_PATH: ${{ inputs.mergify_config_path }}
         ALL_SCOPES: ${{ inputs.all_scopes }}
