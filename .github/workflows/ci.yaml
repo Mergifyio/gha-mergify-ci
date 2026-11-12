@@ -67,6 +67,11 @@ jobs:
   test-scopes:
     timeout-minutes: 5
     runs-on: ubuntu-26.04
+    # The steps without a token reach the real Mergify API with a token
+    # exchanged from the job's ID token.
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -83,9 +88,18 @@ jobs:
         uses: ./
         with:
           action: scopes-upload
-          token: ${{ secrets.MERGIFY_TOKEN }}
           scopes: scope1,scope2
           mergify_config_path: zfixtures/mergify.yml
+
+      # Without a token, the action skips the upload with a warning rather
+      # than fail. A pull request from a fork gets no ID token.
+      - name: Verify the job got a Mergify token from its ID token
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          if [ -z "${MERGIFY_TOKEN:-}" ]; then
+            echo "::error::The action exported no MERGIFY_TOKEN: see its warning"
+            exit 1
+          fi
 
       # No scopes input: an all-scopes pull request may carry no concrete
       # scope, exercising the empty-list path.
@@ -94,7 +108,6 @@ jobs:
         uses: ./
         with:
           action: scopes-upload
-          token: ${{ secrets.MERGIFY_TOKEN }}
           all_scopes: true
           mergify_config_path: zfixtures/mergify.yml
 
@@ -187,7 +200,6 @@ jobs:
         uses: ./
         with:
           action: scopes
-          token: ${{ secrets.MERGIFY_TOKEN }}
           mergify_config_path: zfixtures/mergify.yml
 
       - name: Check scopes
@@ -199,6 +211,113 @@ jobs:
           echo "SCOPES: $SCOPES"
           test "$EVERYTHING" == "true"
           test "$EVERYTHING_BOOL" == "true"
+
+      - name: Dump mockserver logs
+        if: failure()
+        run: docker compose logs mockServer
+
+  # A pull request from a fork gets no ID token.
+  test-id-token-exchange:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 5
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # The mock gives mrt_first to the first exchange and mrt_second to the
+      # next, and takes each step's report only with its own token: the
+      # second step must exchange again rather than reuse the token the
+      # first one exported.
+      - name: Expect two exchanges and a report with each token
+        env:
+          REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          docker compose up -d mockServer
+          expect() {
+            curl -sf --retry 10 --retry-all-errors --retry-delay 1 \
+              -X PUT http://localhost:1080/mockserver/expectation -d @-
+          }
+          priority=1
+          for token in mrt_first mrt_second; do
+            jq -n --arg token "$token" --argjson priority "$priority" '{
+              httpRequest: {
+                method: "POST",
+                path: "/v1/ci/oidc/exchange",
+                body: {
+                  type: "JSON_SCHEMA",
+                  jsonSchema: {
+                    type: "object",
+                    required: ["id_token"],
+                    properties: {id_token: {type: "string", minLength: 1}}
+                  }
+                }
+              },
+              httpResponse: {
+                statusCode: 200,
+                headers: {"Content-Type": ["application/json"]},
+                body: ({token: $token, expires_in: 3600} | tojson)
+              },
+              times: {remainingTimes: 1},
+              priority: $priority
+            }' | expect
+            priority=0
+          done
+          scopes_request() {
+            jq -n --arg path "/v1/repos/$REPOSITORY/commits/$HEAD_SHA/scopes" \
+              --arg token "$1" --argjson scopes "$2" '{
+              method: "PUT",
+              path: $path,
+              headers: {Authorization: ["Bearer \($token)"]},
+              body: {type: "JSON", json: {scopes: $scopes, all_scopes: false}}
+            }'
+          }
+          scopes_request mrt_first '["scope1", "scope2"]' > "$RUNNER_TEMP/scopes-first.json"
+          # zfixtures/mergify.yml detects `everything` for any change.
+          scopes_request mrt_second '["everything"]' > "$RUNNER_TEMP/scopes-second.json"
+          for request in "$RUNNER_TEMP"/scopes-{first,second}.json; do
+            jq '{httpRequest: ., httpResponse: {statusCode: 200}}' "$request" | expect
+          done
+
+      # The trailing slash must not reach the paths.
+      - name: Trying action scopes-upload with the job's ID token
+        uses: ./
+        with:
+          action: scopes-upload
+          scopes: scope1,scope2
+          mergify_api_url: http://localhost:1080/
+          mergify_config_path: zfixtures/mergify.yml
+
+      - name: Trying action scopes with the job's ID token again
+        uses: ./
+        with:
+          action: scopes
+          mergify_api_url: http://localhost:1080/
+          mergify_config_path: zfixtures/mergify.yml
+
+      - name: Verify each step exchanged and reported with its token
+        run: |
+          set -euo pipefail
+          verify() {
+            curl -sS --fail-with-body \
+              -X PUT http://localhost:1080/mockserver/verify -d @-
+          }
+          jq -n '{
+            httpRequest: {method: "POST", path: "/v1/ci/oidc/exchange"},
+            times: {atLeast: 2, atMost: 2}
+          }' | verify
+          for request in "$RUNNER_TEMP"/scopes-{first,second}.json; do
+            jq '{httpRequest: ., times: {atLeast: 1, atMost: 1}}' "$request" | verify
+          done
+          if [ "${MERGIFY_TOKEN:-}" != mrt_second ]; then
+            echo "::error::The following steps did not get the last exchanged token as MERGIFY_TOKEN"
+            exit 1
+          fi
 
       - name: Dump mockserver logs
         if: failure()
@@ -322,6 +441,7 @@ jobs:
       - linters
       - autodoc
       - test-scopes
+      - test-id-token-exchange
       - test-junit
       - test-wait-jobs
     runs-on: ubuntu-26.04
