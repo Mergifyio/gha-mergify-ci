@@ -16,7 +16,10 @@ inputs:
     # Backward compat
     default: junit-process
   token:
-    description: Mergify CI token
+    description: |
+      Mergify application key with the `ci` scope. Defaults to the job's
+      MERGIFY_TOKEN. Without either, in a job granted `id-token: write`, the
+      Mergify CLI exchanges the job's GitHub ID token for a Mergify token.
   mergify_api_url:
     description: URL of the Mergify API
     default: https://api.mergify.com
@@ -109,25 +112,26 @@ runs:
     # Hence two variants: forward an explicit value, or call with no version.
     - name: Setup Mergify CLI 🔧
       if: inputs.mergify_cli_version != ''
-      uses: Mergifyio/setup-cli@f4029a9e48b04e184138fdb17df2b27eb035d8bf # v1.5.0
+      uses: Mergifyio/setup-cli@4c0a3dd5939b5f8fb423b48d4e99cfab29f75e87 # v1.6.0
       with:
         mergify_cli_version: ${{ inputs.mergify_cli_version }}
 
     - name: Setup Mergify CLI (pinned default) 🔧
       if: inputs.mergify_cli_version == ''
-      uses: Mergifyio/setup-cli@f4029a9e48b04e184138fdb17df2b27eb035d8bf # v1.5.0
+      uses: Mergifyio/setup-cli@4c0a3dd5939b5f8fb423b48d4e99cfab29f75e87 # v1.6.0
 
     # A step-level env entry that evaluates to '' is still exported, and it
-    # shadows the caller's job-level or step-level MERGIFY_TEST_JOB_NAME (and
-    # anything written to $GITHUB_ENV). Fall back to the caller's value so an
-    # omitted job_name input leaves that override intact; the input wins when
-    # both are set.
+    # shadows the caller's job-level or step-level MERGIFY_TEST_JOB_NAME and
+    # MERGIFY_TOKEN (and anything written to $GITHUB_ENV). Fall back to the
+    # caller's value so an omitted input leaves it intact; the input wins when
+    # both are set. With no token at all, the CLI exchanges the job's GitHub ID
+    # token when the job may ask for one.
     - shell: bash
       id: junit-process
       if: inputs.action == 'junit-process'
       env:
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
-        MERGIFY_TOKEN: ${{ inputs.token }}
+        MERGIFY_TOKEN: ${{ inputs.token || env.MERGIFY_TOKEN }}
         MERGIFY_TEST_JOB_NAME: ${{ inputs.job_name || env.MERGIFY_TEST_JOB_NAME }}
         MERGIFY_TEST_EXIT_CODE: >-
           ${{ inputs.test_step_outcome == 'success' && '0'
@@ -189,22 +193,19 @@ runs:
         echo "Created scopes file:"
         cat "$FILE"
 
-    - name: Warn if token is unset for scopes upload
-      shell: bash
-      if: |
-        !inputs.token &&
-        (inputs.action == 'scopes' ||
-         (inputs.action == 'scopes-upload' && github.event.pull_request))
-      run: echo "::warning::Mergify token is not set, scopes will not be sent to Mergify API"
-
+    # Scopes are only sent for a pull request, with the token found as for
+    # junit-process, else the job's GitHub ID token, which the CLI exchanges
+    # for a Mergify token (it warns and carries on when Mergify gives none).
+    # Only a job granted `id-token: write` can ask for an ID token, and the
+    # runner says so to a step's process, not to the `env` context an `if:`
+    # reads: a job with neither is warned here.
     - name: Upload scopes to Mergify API
       shell: bash
       if: |
-        inputs.token &&
-        (inputs.action == 'scopes' ||
-         (inputs.action == 'scopes-upload' && github.event.pull_request))
+        (inputs.action == 'scopes' || inputs.action == 'scopes-upload') &&
+        github.event.pull_request
       env:
-        MERGIFY_TOKEN: ${{ inputs.token }}
+        MERGIFY_TOKEN: ${{ inputs.token || env.MERGIFY_TOKEN }}
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
         MERGIFY_CONFIG_PATH: ${{ inputs.mergify_config_path }}
         ALL_SCOPES: ${{ inputs.all_scopes }}
@@ -212,6 +213,10 @@ runs:
         SCOPES: ${{ inputs.scopes }}
       run: |
         set -euo pipefail
+        if [ -z "$MERGIFY_TOKEN" ] && [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+          echo "::warning::Mergify token is not set, scopes will not be sent to Mergify API"
+          exit 0
+        fi
         args=(--scopes-json "$RUNNER_TEMP/mergify-scopes.json")
         # A report replaces the previous one for the same commit, so the
         # extra scopes of action: scopes go in the detection's report rather
