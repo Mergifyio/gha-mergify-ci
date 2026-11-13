@@ -1,0 +1,1 @@
+test-junit mock's test states gain the state field CLI 2026.11.7+ requires (red on d5dfda8, reproduced and fixed locally with 2026.11.8).
