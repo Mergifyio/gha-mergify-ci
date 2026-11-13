@@ -23,9 +23,9 @@
             "statusCode": 200,
             "body": {
                 "test_states": [
-                    {"test_name": "Tests.Registration.testCase3"},
-                    {"test_name": "Tests.Authentication.testCase9"},
-                    {"test_name": "Tests.Permission.testCase10"}
+                    {"test_name": "Tests.Registration.testCase3", "state": "quarantined"},
+                    {"test_name": "Tests.Authentication.testCase9", "state": "quarantined"},
+                    {"test_name": "Tests.Permission.testCase10", "state": "quarantined"}
                 ]
             }
         }
