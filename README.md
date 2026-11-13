@@ -21,6 +21,30 @@ Pin the action to a released version (see the [releases](https://github.com/Merg
 
 Need help setting it up? See the [GitHub Actions setup guide](https://docs.mergify.com/ci-insights/setup/github-actions/) on the Mergify docs.
 
+## Authentication without a stored key
+
+Without a `token` input or a `MERGIFY_TOKEN` in the job's environment, a
+job granted `id-token: write` reaches Mergify with its GitHub ID token: the
+Mergify CLI the action runs exchanges it for a short-lived Mergify token, if
+a trust policy of your organization allows the job.
+
+```yaml
+jobs:
+  test:
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      # ...
+      - uses: Mergifyio/gha-mergify-ci@v29
+        with:
+          action: junit-process
+          report_path: "**/junit*.xml"
+```
+
+When Mergify gives the job no token, the scopes upload is skipped with a
+warning saying why, and `junit-process` fails as it does without a token.
+
 ## Merge Queue scopes
 
 Scopes tell the Mergify Merge Queue which parts of the repository a pull
@@ -93,7 +117,7 @@ requests. `all_scopes: true` works with both `action: scopes` and
 | `report_path` | string | false |  | Path of the files to upload |
 | `scopes` | string | false |  | Comma separated list of scopes to upload (actions: scopes, scopes-upload). With action: scopes, they are added to the scopes detected from the changed files and sent in the same report, e.g. the scopes your build tool knows on top of the configuration file filters. |
 | `test_step_outcome` | string | false |  | Outcome of the test runner step (e.g. steps.<id>.outcome). Pass this to detect silent failures where the test runner crashed but the JUnit report appears clean. Values: 'success', 'failure', 'cancelled', 'skipped', or omit entirely. 'skipped' is treated the same as omitting this input. |
-| `token` | string | false |  | Mergify CI token |
+| `token` | string | false |  | Mergify application key with the `ci` scope. Defaults to the job's MERGIFY_TOKEN. Without either, in a job granted `id-token: write`, the Mergify CLI exchanges the job's GitHub ID token for a Mergify token. |
 
 <!-- AUTO-DOC-INPUT:END -->
 
