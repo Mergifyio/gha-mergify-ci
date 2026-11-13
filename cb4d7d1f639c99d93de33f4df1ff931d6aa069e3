@@ -1,0 +1,1 @@
+test-scopes expects merge-queue instead of everything on a merge queue draft: CLI 2026.11.8 reads the batch's scopes there (queue dropped it, CHECKS_FAILED).
