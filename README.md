@@ -12,7 +12,7 @@ More information on https://mergify.com
 Pin the action to a released version (see the [releases](https://github.com/Mergifyio/gha-mergify-ci/releases)):
 
 ```yaml
-- uses: Mergifyio/gha-mergify-ci@v29
+- uses: Mergifyio/gha-mergify-ci@v30
   with:
     action: junit-process
     token: ${{ secrets.MERGIFY_TOKEN }}
@@ -36,7 +36,7 @@ jobs:
       id-token: write
     steps:
       # ...
-      - uses: Mergifyio/gha-mergify-ci@v29
+      - uses: Mergifyio/gha-mergify-ci@v30
         with:
           action: junit-process
           report_path: "**/junit*.xml"
@@ -54,7 +54,7 @@ or `action: scopes-upload` to upload a list you computed yourself (e.g. the
 leaf targets of your build graph):
 
 ```yaml
-- uses: Mergifyio/gha-mergify-ci@v29
+- uses: Mergifyio/gha-mergify-ci@v30
   with:
     action: scopes-upload
     token: ${{ secrets.MERGIFY_TOKEN }}
@@ -69,7 +69,7 @@ action sends one report with the scopes detected from the changed files plus
 these:
 
 ```yaml
-- uses: Mergifyio/gha-mergify-ci@v29
+- uses: Mergifyio/gha-mergify-ci@v30
   with:
     action: scopes
     token: ${{ secrets.MERGIFY_TOKEN }}
@@ -87,7 +87,7 @@ configuration change — and enumerating every scope is brittle. Set
 `all_scopes: true` to declare it explicitly:
 
 ```yaml
-- uses: Mergifyio/gha-mergify-ci@v29
+- uses: Mergifyio/gha-mergify-ci@v30
   with:
     action: scopes-upload
     token: ${{ secrets.MERGIFY_TOKEN }}
@@ -133,7 +133,7 @@ requests. `all_scopes: true` works with both `action: scopes` and
 A rejected upload does not fail the step — Mergify-side trouble must not break your CI. To surface dead ingest in your workflow, check the output explicitly:
 
 ```yaml
-- uses: Mergifyio/gha-mergify-ci@v29
+- uses: Mergifyio/gha-mergify-ci@v30
   id: mergify-ci
   with:
     action: junit-process
