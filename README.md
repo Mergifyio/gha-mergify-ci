@@ -9,7 +9,60 @@ More information on https://mergify.com
 
 ## Usage
 
-Pin the action to a released version (see the [releases](https://github.com/Mergifyio/gha-mergify-ci/releases)):
+Pin the action to a released version (see the
+[releases](https://github.com/Mergifyio/gha-mergify-ci/releases)) and grant
+the job `id-token: write`:
+
+```yaml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      # ...
+      - uses: Mergifyio/gha-mergify-ci@v30
+        with:
+          action: junit-process
+          report_path: "**/junit*.xml"
+```
+
+The job stores no Mergify key. The Mergify CLI the action runs trades the
+job's GitHub ID token for a Mergify token that works for one hour, on this
+repository only. If you pin `mergify_cli_version`, pin 2026.11.8 or later.
+
+A `permissions` block sets every permission it does not list to `none`, so
+list the ones your other steps need too. A job of a reusable workflow gets
+`id-token: write` only if its calling job grants it.
+
+Mergify refuses the ID token until a trust policy of your organization
+covers the repository. A GitHub organization owner or a CI Admin writes
+one, as [OIDC Authentication](https://docs.mergify.com/integrations/gha/oidc/#write-a-trust-policy)
+shows. ID token authentication is in Preview.
+
+When Mergify refuses the job a token, `junit-process` fails its step and the
+scopes upload is skipped with a warning saying why. On a public repository,
+GitHub gives runs for pull requests from forks no ID token: skip the upload
+there with
+`if: (success() || failure()) && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository)`.
+
+Need help setting it up? See the [GitHub Actions setup guide](https://docs.mergify.com/ci-insights/setup/github-actions/) on the Mergify docs.
+
+## Use an application key instead
+
+Some jobs need a Mergify application key granted
+[CI Reporting](https://docs.mergify.com/api/usage/#ci-reporting):
+
+* runs for pull requests from forks, when your organization sends them
+  secrets;
+* jobs that run on the base branch (`pull_request_target`, `workflow_run`,
+  `issue_comment`): trust policies leave those events out unless they name
+  them, and Mergify refuses the scopes a `pull_request_target` job sends with
+  its ID token.
+
+Store the key as the `MERGIFY_TOKEN` repository secret and pass it as
+`token`, or set `MERGIFY_TOKEN` in the job's environment:
 
 ```yaml
 - uses: Mergifyio/gha-mergify-ci@v30
@@ -19,31 +72,11 @@ Pin the action to a released version (see the [releases](https://github.com/Merg
     report_path: "**/junit*.xml"
 ```
 
-Need help setting it up? See the [GitHub Actions setup guide](https://docs.mergify.com/ci-insights/setup/github-actions/) on the Mergify docs.
-
-## Authentication without a stored key
-
-Without a `token` input or a `MERGIFY_TOKEN` in the job's environment, a
-job granted `id-token: write` reaches Mergify with its GitHub ID token: the
-Mergify CLI the action runs exchanges it for a short-lived Mergify token, if
-a trust policy of your organization allows the job.
-
-```yaml
-jobs:
-  test:
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      # ...
-      - uses: Mergifyio/gha-mergify-ci@v30
-        with:
-          action: junit-process
-          report_path: "**/junit*.xml"
-```
-
-When Mergify gives the job no token, the scopes upload is skipped with a
-warning saying why, and `junit-process` fails as it does without a token.
+A key set either way wins over the ID token, so to keep the ID token
+everywhere else, set it on those runs only.
+[Jobs that keep a key](https://docs.mergify.com/integrations/gha/oidc/#jobs-that-keep-a-key)
+shows how for each case. If your workflows store `MERGIFY_TOKEN` today,
+[move them off it](https://docs.mergify.com/integrations/gha/oidc/#move-your-workflows-off-mergify_token).
 
 ## Merge Queue scopes
 
@@ -51,13 +84,13 @@ Scopes tell the Mergify Merge Queue which parts of the repository a pull
 request impacts, so batches with disjoint scopes can merge in parallel. Use
 `action: scopes` to detect them from the Mergify configuration file filters,
 or `action: scopes-upload` to upload a list you computed yourself (e.g. the
-leaf targets of your build graph):
+leaf targets of your build graph). Both upload with the job's ID token, so
+grant the job `id-token: write` as in [Usage](#usage):
 
 ```yaml
 - uses: Mergifyio/gha-mergify-ci@v30
   with:
     action: scopes-upload
-    token: ${{ secrets.MERGIFY_TOKEN }}
     scopes: backend,frontend
 ```
 
@@ -72,7 +105,6 @@ these:
 - uses: Mergifyio/gha-mergify-ci@v30
   with:
     action: scopes
-    token: ${{ secrets.MERGIFY_TOKEN }}
     scopes: ${{ steps.build-graph.outputs.scopes }}
 ```
 
@@ -90,7 +122,6 @@ configuration change — and enumerating every scope is brittle. Set
 - uses: Mergifyio/gha-mergify-ci@v30
   with:
     action: scopes-upload
-    token: ${{ secrets.MERGIFY_TOKEN }}
     all_scopes: true
 ```
 
@@ -117,7 +148,7 @@ requests. `all_scopes: true` works with both `action: scopes` and
 | `report_path` | string | false |  | Path of the files to upload |
 | `scopes` | string | false |  | Comma separated list of scopes to upload (actions: scopes, scopes-upload). With action: scopes, they are added to the scopes detected from the changed files and sent in the same report, e.g. the scopes your build tool knows on top of the configuration file filters. |
 | `test_step_outcome` | string | false |  | Outcome of the test runner step (e.g. steps.<id>.outcome). Pass this to detect silent failures where the test runner crashed but the JUnit report appears clean. Values: 'success', 'failure', 'cancelled', 'skipped', or omit entirely. 'skipped' is treated the same as omitting this input. |
-| `token` | string | false |  | Mergify application key with the `ci` scope. Defaults to the job's MERGIFY_TOKEN. Without either, in a job granted `id-token: write`, the Mergify CLI exchanges the job's GitHub ID token for a Mergify token. |
+| `token` | string | false |  | A Mergify application key granted CI Reporting, defaulting to the job's MERGIFY_TOKEN. Optional in a job granted `id-token: write`: without a key, the Mergify CLI trades the job's GitHub ID token for a Mergify token, if a trust policy of your organization allows the job. A key wins over the ID token. |
 
 <!-- AUTO-DOC-INPUT:END -->
 
@@ -125,7 +156,7 @@ requests. `all_scopes: true` works with both `action: scopes` and
 
 | Output | Description |
 | --- | --- |
-| `test_results_upload` | Outcome of the JUnit test-results upload to Mergify Test Engine (action: junit-process): `success`, `rejected` (the API refused the upload, e.g. a token without CI Insights access — no test data was recorded) or `failed` (transient upload error). Empty when the junit-process step did not run or the installed mergify-cli predates this output. |
+| `test_results_upload` | Outcome of the JUnit test-results upload to Mergify Test Engine (action: junit-process): `success`, `rejected` (the API refused the upload, e.g. a key not granted CI Reporting, and recorded no test data) or `failed` (transient upload error). Empty when the junit-process step did not run or the installed mergify-cli predates this output. |
 | `scopes` | Stringified JSON mapping with names of all scopes matching any of the changed files |
 | `base` | The Merge Queue-aware base SHA of the pull request |
 | `head` | The Merge Queue-aware head SHA of the pull request |
@@ -137,11 +168,10 @@ A rejected upload does not fail the step — Mergify-side trouble must not break
   id: mergify-ci
   with:
     action: junit-process
-    token: ${{ secrets.MERGIFY_TOKEN }}
     report_path: "**/junit*.xml"
 
 - if: steps.mergify-ci.outputs.test_results_upload == 'rejected'
   run: |
-    echo "Test results upload was rejected — check the MERGIFY_TOKEN permissions."
+    echo "Mergify rejected the test results upload: see the Mergify step's log."
     exit 1
 ```
