@@ -1,0 +1,1 @@
+README fork guard: same-repo check (head.repo.full_name == github.repository) instead of !head.repo.fork, as in the docs and CLI skill
