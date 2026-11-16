@@ -17,9 +17,11 @@ inputs:
     default: junit-process
   token:
     description: |
-      Mergify application key with the `ci` scope. Defaults to the job's
-      MERGIFY_TOKEN. Without either, in a job granted `id-token: write`, the
-      Mergify CLI exchanges the job's GitHub ID token for a Mergify token.
+      A Mergify application key granted CI Reporting, defaulting to the
+      job's MERGIFY_TOKEN. Optional in a job granted `id-token: write`:
+      without a key, the Mergify CLI trades the job's GitHub ID token for a
+      Mergify token, if a trust policy of your organization allows the job.
+      A key wins over the ID token.
   mergify_api_url:
     description: URL of the Mergify API
     default: https://api.mergify.com
@@ -73,8 +75,8 @@ outputs:
     description: |
       Outcome of the JUnit test-results upload to Mergify Test Engine
       (action: junit-process): 'success', 'rejected' (the API refused the
-      upload, e.g. a token without CI Insights access — no test data was
-      recorded) or 'failed' (transient upload error). Empty when the
+      upload, e.g. a key not granted CI Reporting, and recorded no test
+      data) or 'failed' (transient upload error). Empty when the
       junit-process step did not run or the installed mergify-cli predates
       this output.
     value: ${{ steps.junit-process.outputs.test_results_upload }}
