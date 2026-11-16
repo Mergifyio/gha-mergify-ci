@@ -1,1 +1,6 @@
-README fork guard: same-repo check (head.repo.full_name == github.repository) instead of !head.repo.fork, as in the docs and CLI skill
+Revision history for #385:
+
+rev 2 (content) 2026-11-16 11:58 UTC — README fork guard: same-repo check (head.repo.full_name == github.repository) instead of !head.repo.fork, as in the docs and CLI skill
+rev 1 (initial) 2026-11-16 11:58 UTC
+
+<!-- mergify-revision-data: {"schema_version":1,"pull_number":385,"entries":[{"number":1,"change_type":"initial","old_sha":null,"new_sha":"8db6ae822f638b51563dba0f290db7dfce4736f4","timestamp_iso":"2026-11-16T11:58:56Z","reason":"","replay_sha":null,"compare_url":null},{"number":2,"change_type":"content","old_sha":"8db6ae822f638b51563dba0f290db7dfce4736f4","new_sha":"5ba1af6d4d4993e66d75b58ecad9385853967de4","timestamp_iso":"2026-11-16T11:58:56Z","reason":"README fork guard: same-repo check (head.repo.full_name == github.repository) instead of !head.repo.fork, as in the docs and CLI skill","replay_sha":null,"compare_url":"https://github.com/Mergifyio/gha-mergify-ci/compare/8db6ae822f638b51563dba0f290db7dfce4736f4...5ba1af6d4d4993e66d75b58ecad9385853967de4"}]} -->
