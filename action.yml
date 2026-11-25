@@ -37,6 +37,10 @@ inputs:
       scopes-upload). With action: scopes, they are added to the scopes
       detected from the changed files and sent in the same report, e.g. the
       scopes your build tool knows on top of the configuration file filters.
+      Mergify adds them only if `scopes.source` declares `manual: null`
+      beside `files`, and the Merge Queue then waits for the report of each
+      pull request it queues. With `files` alone, Mergify ignores them and
+      uses the file filters only.
   all_scopes:
     description: |
       Declare that the pull request impacts all scopes (actions: scopes,
@@ -44,7 +48,10 @@ inputs:
       barrier: it conflicts with every scope, so it is never batched or
       merged in parallel with other pull requests. Typical use: a
       build-system or CI configuration change where enumerating every
-      impacted scope is brittle.
+      impacted scope is brittle. With action: scopes, it counts only if
+      `scopes.source` declares `manual: null` beside `files`, as for
+      `scopes`; with `files` alone, list such files in `barrier_files`
+      instead.
     default: "false"
   mergify_config_path:
     description: Path to the Mergify configuration file
