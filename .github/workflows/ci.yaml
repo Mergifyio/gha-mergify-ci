@@ -23,7 +23,7 @@ jobs:
       - name: Setup Python 🔧
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: 3.14.8
+          python-version: 3.15.2
 
       - name: Check workflow files
         uses: docker://rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
@@ -34,11 +34,19 @@ jobs:
         run: |
           # nosemgrep: generic.ci.security.use-frozen-lockfile.use-frozen-lockfile-pip
           pip install semgrep yamllint
-          # The short minimumReleaseAge for our own first-party deps in
-          # renovate.json is deliberate, and the rule's suggested opt-out
-          # ("minimumReleaseAge": false) is invalid per the Renovate schema.
-          semgrep --config=auto --error \
-            --exclude-rule package_managers.renovate.renovate-missing-minimum-release-age.renovate-missing-minimum-release-age
+          (
+            # On Python 3.15, semgrep sets semgrep-core's stack soft limit to a
+            # third of an unlimited hard limit, about 6 EB, and semgrep-core
+            # crashes (https://github.com/semgrep/semgrep/issues/11979). A
+            # 3 GiB hard limit makes that third 1 GiB, about what semgrep
+            # picks on Python 3.14.
+            ulimit -Hs 3145728
+            # The short minimumReleaseAge for our own first-party deps in
+            # renovate.json is deliberate, and the rule's suggested opt-out
+            # ("minimumReleaseAge": false) is invalid per the Renovate schema.
+            semgrep --config=auto --error \
+              --exclude-rule package_managers.renovate.renovate-missing-minimum-release-age.renovate-missing-minimum-release-age
+          )
           yamllint .
 
   autodoc:
