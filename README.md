@@ -108,6 +108,23 @@ these:
     scopes: ${{ steps.build-graph.outputs.scopes }}
 ```
 
+Mergify adds them only if your configuration declares `manual: null` beside
+`files` in `scopes.source`:
+
+```yaml
+scopes:
+  source:
+    files:
+      frontend:
+        include:
+          - apps/web/**/*
+    manual: null
+```
+
+The Merge Queue then waits for the report of each pull request it queues, so
+run the action on every pull request, even with nothing to add. With `files`
+alone, Mergify ignores the scopes you send and uses the file filters only.
+
 Send them this way rather than from a second step: each report replaces the
 previous one for the same commit, so an `action: scopes` step followed by an
 `action: scopes-upload` step keeps only the uploaded scopes.
@@ -128,7 +145,11 @@ configuration change — and enumerating every scope is brittle. Set
 The Merge Queue treats such a pull request as a barrier: it conflicts with
 every scope, so it is never batched or merged in parallel with other pull
 requests. `all_scopes: true` works with both `action: scopes` and
-`action: scopes-upload`, with or without concrete `scopes`.
+`action: scopes-upload`, with or without concrete `scopes`. With
+`action: scopes`, it counts only if `scopes.source` declares `manual: null`
+beside `files`, as for [extra scopes](#adding-scopes-to-the-detected-ones);
+with `files` alone, list the files that impact every scope in
+`scopes.barrier_files` instead.
 
 ## Inputs
 
@@ -137,7 +158,7 @@ requests. `all_scopes: true` works with both `action: scopes` and
 | Input | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `action` | string | false | `junit-process` | The Mergify CI action:<br>• junit-process: process JUnit XML files with Mergify CI Insights (Upload and Quarantine)<br>• scopes: detect and upload pull requests scopes to Mergify Merge Queue<br>• scopes-git-refs: return the base/head git references of the pull request in Merge Queue context<br>• scopes-upload: upload pull requests scopes to Mergify Merge Queue<br>• wait-jobs: wait for specified jobs to complete before proceeding |
-| `all_scopes` | string | false | `false` | Declare that the pull request impacts all scopes (actions: scopes, scopes-upload). The Merge Queue treats such a pull request as a barrier: it conflicts with every scope, so it is never batched or merged in parallel with other pull requests. Typical use: a build-system or CI configuration change where enumerating every impacted scope is brittle. |
+| `all_scopes` | string | false | `false` | Declare that the pull request impacts all scopes (actions: scopes, scopes-upload). The Merge Queue treats such a pull request as a barrier: it conflicts with every scope, so it is never batched or merged in parallel with other pull requests. Typical use: a build-system or CI configuration change where enumerating every impacted scope is brittle. With action: scopes, it counts only if `scopes.source` declares `manual: null` beside `files`, as for `scopes`; with `files` alone, list such files in `barrier_files` instead. |
 | `base` | string | false |  | Base git reference for scope detection (action: scopes). Overrides the automatic push/pull-request detection. Leave unset to auto-detect. |
 | `head` | string | false |  | Head git reference for scope detection (action: scopes). Defaults to HEAD. Leave unset to auto-detect. |
 | `job_name` | string | false |  | Override the job name, must be used in case of matrix job to avoid having the same name for all jobs |
@@ -146,7 +167,7 @@ requests. `all_scopes: true` works with both `action: scopes` and
 | `mergify_cli_version` | string | false |  | Version of mergify-cli to install. Use `latest` to install the latest released version without pinning. Leave unset to use the version pinned by Mergifyio/setup-cli. |
 | `mergify_config_path` | string | false |  | Path to the Mergify configuration file |
 | `report_path` | string | false |  | Path of the files to upload |
-| `scopes` | string | false |  | Comma separated list of scopes to upload (actions: scopes, scopes-upload). With action: scopes, they are added to the scopes detected from the changed files and sent in the same report, e.g. the scopes your build tool knows on top of the configuration file filters. |
+| `scopes` | string | false |  | Comma separated list of scopes to upload (actions: scopes, scopes-upload). With action: scopes, they are added to the scopes detected from the changed files and sent in the same report, e.g. the scopes your build tool knows on top of the configuration file filters. Mergify adds them only if `scopes.source` declares `manual: null` beside `files`, and the Merge Queue then waits for the report of each pull request it queues. With `files` alone, Mergify ignores them and uses the file filters only. |
 | `test_step_outcome` | string | false |  | Outcome of the test runner step (e.g. steps.<id>.outcome). Pass this to detect silent failures where the test runner crashed but the JUnit report appears clean. Values: 'success', 'failure', 'cancelled', 'skipped', or omit entirely. 'skipped' is treated the same as omitting this input. |
 | `token` | string | false |  | A Mergify application key granted CI Reporting, defaulting to the job's MERGIFY_TOKEN. Optional in a job granted `id-token: write`: without a key, the Mergify CLI trades the job's GitHub ID token for a Mergify token, if a trust policy of your organization allows the job. A key wins over the ID token. |
 
