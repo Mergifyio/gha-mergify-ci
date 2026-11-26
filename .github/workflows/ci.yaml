@@ -221,6 +221,89 @@ jobs:
             | curl -sS --fail-with-body \
               -X PUT http://localhost:1080/mockserver/verify -d @-
 
+      # mockServerError answers every request with a 500. The upload fails
+      # by default, and warns and passes with skip_when_mergify_unavailable.
+      # setup-cli's default CLI may predate the flag, so both steps install
+      # the first release that has it.
+      - name: Start a Mergify that answers every request with a 500
+        run: |
+          set -euo pipefail
+          docker compose up -d mockServerError
+          curl -sf --retry 10 --retry-all-errors --retry-delay 1 \
+            -X PUT http://localhost:1085/mockserver/status > /dev/null
+
+      - name: Trying action scopes-upload while Mergify fails
+        id: scopes-upload-unavailable
+        continue-on-error: true
+        uses: ./
+        with:
+          action: scopes-upload
+          token: fake-valid-token
+          scopes: fails-by-default
+          mergify_api_url: http://localhost:1085
+          mergify_config_path: zfixtures/mergify.yml
+          mergify_cli_version: 2026.11.20
+
+      - name: Trying action scopes-upload while Mergify fails, skipping
+        uses: ./
+        with:
+          action: scopes-upload
+          token: fake-valid-token
+          scopes: skips-when-asked
+          mergify_api_url: http://localhost:1085
+          mergify_config_path: zfixtures/mergify.yml
+          mergify_cli_version: 2026.11.20
+          skip_when_mergify_unavailable: true
+
+      # 2026.11.19 is the last release without the flag.
+      - name: Trying action scopes-upload skipping with a CLI too old for it
+        id: scopes-upload-old-cli
+        continue-on-error: true
+        uses: ./
+        with:
+          action: scopes-upload
+          token: fake-valid-token
+          scopes: needs-a-newer-cli
+          mergify_api_url: http://localhost:1085
+          mergify_config_path: zfixtures/mergify.yml
+          mergify_cli_version: 2026.11.19
+          skip_when_mergify_unavailable: true
+
+      # The CLI also passes having sent nothing, without a pull request:
+      # require the two uploads it ran to have reached the failing Mergify,
+      # and the one with the old CLI to have sent nothing.
+      - name: Verify which uploads failed and which reached Mergify
+        env:
+          DEFAULT_OUTCOME: ${{ steps.scopes-upload-unavailable.outcome }}
+          OLD_CLI_OUTCOME: ${{ steps.scopes-upload-old-cli.outcome }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$DEFAULT_OUTCOME" != failure ]; then
+            echo "::error::The upload to a failing Mergify did not fail without skip_when_mergify_unavailable: $DEFAULT_OUTCOME"
+            exit 1
+          fi
+          if [ "$OLD_CLI_OUTCOME" != failure ]; then
+            echo "::error::skip_when_mergify_unavailable did not fail with mergify-cli 2026.11.19: $OLD_CLI_OUTCOME"
+            exit 1
+          fi
+          # Verifies that the uploads of scope $1 reached the mock as many
+          # times as the jq `times` object $2 says.
+          verify() {
+            jq -n --arg path "/v1/repos/$REPOSITORY/commits/$HEAD_SHA/scopes" \
+              --arg scope "$1" '{
+              method: "PUT",
+              path: $path,
+              body: {type: "JSON", json: {scopes: [$scope]}}
+            }' | jq "{httpRequest: ., times: $2}" \
+              | curl -sS --fail-with-body \
+                -X PUT http://localhost:1085/mockserver/verify -d @-
+          }
+          verify fails-by-default '{atLeast: 1}'
+          verify skips-when-asked '{atLeast: 1}'
+          verify needs-a-newer-cli '{atLeast: 0, atMost: 0}'
+
       - name: Trying action scopes
         id: scopes-detection
         uses: ./
@@ -240,7 +323,7 @@ jobs:
 
       - name: Dump mockserver logs
         if: failure()
-        run: docker compose logs mockServer
+        run: docker compose logs mockServer mockServerError
 
   # The action hands the CLI no token of its own: the CLI exchanges the job's
   # ID token, and carries on when Mergify gives it none. The mock stands in
