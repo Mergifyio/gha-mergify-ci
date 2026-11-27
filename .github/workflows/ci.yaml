@@ -395,6 +395,99 @@ jobs:
         if: failure()
         run: docker compose logs mockServer
 
+  # A merge queue batch built on another batch has two bases, which the
+  # engine's note on its head gives: the top of the batches it is built on
+  # (checking_base_sha) and the commit of the base branch below them
+  # (queue_base_sha). This job makes its pull request such a batch: it notes
+  # the head in a local repository that stands in for origin, which the CLI
+  # fetches the note from. No note is read for a pull request from a fork.
+  test-scopes-stacked-batch:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 5
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    env:
+      CHECKING_BASE: 1111111111111111111111111111111111111111
+      QUEUE_BASE: 2222222222222222222222222222222222222222
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Note the pull request head as a batch built on another
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          note=$(jq -n --arg checking "$CHECKING_BASE" --arg queue "$QUEUE_BASE" \
+            '{checking_base_sha: $checking, queue_base_sha: $queue, scopes: []}')
+          git -c user.name=ci -c user.email=ci@localhost \
+            notes --ref "mergify/$HEAD_REF" add -m "$note" "$HEAD_SHA"
+          git init --quiet --bare "$RUNNER_TEMP/origin.git"
+          git push --quiet "$RUNNER_TEMP/origin.git" "refs/notes/mergify/$HEAD_REF"
+          git remote set-url origin "$RUNNER_TEMP/origin.git"
+
+      # The latest CLI, so that a release whose help no longer lists
+      # --for-scopes fails here rather than moving the base unnoticed.
+      - name: Trying action scopes-git-refs
+        id: git-refs
+        uses: ./
+        with:
+          action: scopes-git-refs
+          mergify_cli_version: latest
+
+      # 2026.11.19 is the last release without --for-scopes.
+      - name: Trying action scopes-git-refs with a CLI that predates --for-scopes
+        id: git-refs-old-cli
+        uses: ./
+        with:
+          action: scopes-git-refs
+          mergify_cli_version: 2026.11.19
+
+      - name: Check that step ran mergify-cli 2026.11.19
+        run: test "$(mergify --version)" = "mergify 2026.11.19"
+
+      # Neither step below has a token to send scopes with: each warns and
+      # passes.
+      - name: Trying action scopes-upload
+        id: scopes-upload
+        uses: ./
+        with:
+          action: scopes-upload
+          scopes: scope1
+          mergify_cli_version: 2026.11.20
+
+      - name: Trying action scopes
+        id: scopes
+        uses: ./
+        with:
+          action: scopes
+          mergify_config_path: zfixtures/mergify.yml
+          mergify_cli_version: 2026.11.20
+
+      - name: Verify the base of each action
+        env:
+          GIT_REFS_BASE: ${{ steps.git-refs.outputs.base }}
+          OLD_CLI_BASE: ${{ steps.git-refs-old-cli.outputs.base }}
+          UPLOAD_BASE: ${{ steps.scopes-upload.outputs.base }}
+          SCOPES_BASE: ${{ steps.scopes.outputs.base }}
+        run: |
+          set -euo pipefail
+          status=0
+          # Checks that action $1 gave base $2, which should be $3.
+          expect() {
+            if [ "$2" != "$3" ]; then
+              echo "::error::$1 gave the base $2 instead of $3"
+              status=1
+            fi
+          }
+          expect scopes-git-refs "$GIT_REFS_BASE" "$CHECKING_BASE"
+          expect "scopes-git-refs with mergify-cli 2026.11.19" "$OLD_CLI_BASE" "$CHECKING_BASE"
+          expect scopes-upload "$UPLOAD_BASE" "$CHECKING_BASE"
+          expect scopes "$SCOPES_BASE" "$QUEUE_BASE"
+          exit "$status"
+
   test-junit:
     timeout-minutes: 5
     runs-on: ubuntu-26.04
@@ -514,6 +607,7 @@ jobs:
       - autodoc
       - test-scopes
       - test-id-token
+      - test-scopes-stacked-batch
       - test-junit
       - test-wait-jobs
     runs-on: ubuntu-26.04

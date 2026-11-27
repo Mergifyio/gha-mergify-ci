@@ -91,7 +91,13 @@ outputs:
     description: stringified JSON mapping with names of all scopes matching any of the changed files
     value: ${{ steps.scopes-detection.outputs.scopes }}
   base:
-    description: The Merge Queue-aware base SHA of the pull request
+    description: |
+      The Merge Queue-aware base SHA of the pull request. On a merge queue
+      batch built on other batches, scopes-git-refs and scopes-upload give
+      the top of those batches, which the batch's scopes are detected from.
+      From mergify-cli 2026.11.20, scopes gives the commit of the base
+      branch below them instead, so that a diff from it holds every pull
+      request that merges when the batch passes.
     value: ${{ steps.git-refs-detection.outputs.base || steps.scopes-detection.outputs.base }}
   head:
     description: The Merge Queue-aware head SHA of the pull request
@@ -156,13 +162,21 @@ runs:
         fi
         mergify ci junit-process -- "$FILES"
 
+    # --for-scopes keeps the base the scopes are detected from, as the base
+    # output says. CLIs before 2026.11.20 give it without the flag, and
+    # reject the flag.
     - name: Detect head sha and base sha
       if: inputs.action == 'scopes-git-refs' || inputs.action == 'scopes-upload'
       id: git-refs-detection
       shell: bash
       env:
         MERGIFY_CONFIG_PATH: ${{ inputs.mergify_config_path }}
-      run: mergify ci git-refs
+      run: |
+        if grep -q -- --for-scopes <<< "$(mergify ci git-refs --help 2>&1)"; then
+          mergify ci git-refs --for-scopes
+        else
+          mergify ci git-refs
+        fi
 
     - name: Detect scopes, head sha and base sha
       if: inputs.action == 'scopes'
