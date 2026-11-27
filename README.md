@@ -179,7 +179,7 @@ with `files` alone, list the files that impact every scope in
 | --- | --- |
 | `test_results_upload` | Outcome of the JUnit test-results upload to Mergify Test Engine (action: junit-process): `success`, `rejected` (the API refused the upload, e.g. a key not granted CI Reporting, and recorded no test data) or `failed` (transient upload error). Empty when the junit-process step did not run or the installed mergify-cli predates this output. |
 | `scopes` | Stringified JSON mapping with names of all scopes matching any of the changed files |
-| `base` | The Merge Queue-aware base SHA of the pull request |
+| `base` | The Merge Queue-aware base SHA of the pull request. On a merge queue batch built on other batches, scopes-git-refs and scopes-upload give the top of those batches, which the batch's scopes are detected from. From mergify-cli 2026.11.20, scopes gives the commit of the base branch below them instead, so that a diff from it holds every pull request that merges when the batch passes. |
 | `head` | The Merge Queue-aware head SHA of the pull request |
 
 A rejected upload does not fail the step — Mergify-side trouble must not break your CI. To surface dead ingest in your workflow, check the output explicitly:
