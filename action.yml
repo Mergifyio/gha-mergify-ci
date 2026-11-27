@@ -93,9 +93,11 @@ outputs:
   test_results_upload:
     description: |
       Outcome of the JUnit test-results upload to Mergify Test Engine
-      (action: junit-process): 'success', 'rejected' (the API refused the
-      upload, e.g. a key not granted CI Reporting, and recorded no test
-      data) or 'failed' (transient upload error). Empty when the
+      (action: junit-process): 'success', 'rejected' or 'failed'.
+      'rejected': Mergify refused the upload, e.g. from a key not granted
+      CI Reporting, or the job's ID token got no Mergify token, e.g. when
+      no trust policy of your organization allows the job. 'failed': a
+      transient upload error. Empty when the
       junit-process step did not run or the installed mergify-cli predates
       this output.
     value: ${{ steps.junit-process.outputs.test_results_upload }}
