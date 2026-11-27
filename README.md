@@ -22,7 +22,7 @@ jobs:
       contents: read
     steps:
       # ...
-      - uses: Mergifyio/gha-mergify-ci@v30
+      - uses: Mergifyio/gha-mergify-ci@v31
         with:
           action: junit-process
           report_path: "**/junit*.xml"
@@ -65,7 +65,7 @@ Store the key as the `MERGIFY_TOKEN` repository secret and pass it as
 `token`, or set `MERGIFY_TOKEN` in the job's environment:
 
 ```yaml
-- uses: Mergifyio/gha-mergify-ci@v30
+- uses: Mergifyio/gha-mergify-ci@v31
   with:
     action: junit-process
     token: ${{ secrets.MERGIFY_TOKEN }}
@@ -88,7 +88,7 @@ leaf targets of your build graph). Both upload with the job's ID token, so
 grant the job `id-token: write` as in [Usage](#usage):
 
 ```yaml
-- uses: Mergifyio/gha-mergify-ci@v30
+- uses: Mergifyio/gha-mergify-ci@v31
   with:
     action: scopes-upload
     scopes: backend,frontend
@@ -102,7 +102,7 @@ action sends one report with the scopes detected from the changed files plus
 these:
 
 ```yaml
-- uses: Mergifyio/gha-mergify-ci@v30
+- uses: Mergifyio/gha-mergify-ci@v31
   with:
     action: scopes
     scopes: ${{ steps.build-graph.outputs.scopes }}
@@ -136,7 +136,7 @@ configuration change — and enumerating every scope is brittle. Set
 `all_scopes: true` to declare it explicitly:
 
 ```yaml
-- uses: Mergifyio/gha-mergify-ci@v30
+- uses: Mergifyio/gha-mergify-ci@v31
   with:
     action: scopes-upload
     all_scopes: true
@@ -162,7 +162,7 @@ required check that must stay green during a Mergify outage, so that a fix
 can still merge, set `skip_when_mergify_unavailable`:
 
 ```yaml
-- uses: Mergifyio/gha-mergify-ci@v30
+- uses: Mergifyio/gha-mergify-ci@v31
   with:
     action: scopes
     skip_when_mergify_unavailable: true
@@ -213,7 +213,7 @@ that version or a later one.
 A rejected upload does not fail the step — Mergify-side trouble must not break your CI. To surface dead ingest in your workflow, check the output explicitly:
 
 ```yaml
-- uses: Mergifyio/gha-mergify-ci@v30
+- uses: Mergifyio/gha-mergify-ci@v31
   id: mergify-ci
   with:
     action: junit-process
