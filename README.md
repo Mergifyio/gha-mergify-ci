@@ -151,6 +151,33 @@ beside `files`, as for [extra scopes](#adding-scopes-to-the-detected-ones);
 with `files` alone, list the files that impact every scope in
 `scopes.barrier_files` instead.
 
+### Keeping a required check green while Mergify is down
+
+The scopes upload fails its step when Mergify answers it with a server
+error or does not answer: the failed check is what tells you to run the job
+again. A job using its ID token already passes, with a warning, when
+Mergify fails to give it a token for that ID token, so there the upload
+fails only when Mergify fails after giving one. If the step is part of a
+required check that must stay green during a Mergify outage, so that a fix
+can still merge, set `skip_when_mergify_unavailable`:
+
+```yaml
+- uses: Mergifyio/gha-mergify-ci@v30
+  with:
+    action: scopes
+    skip_when_mergify_unavailable: true
+```
+
+The upload then warns and the step passes when Mergify answers with a
+server error, a timeout or a throttle once the retries ran out, or does not
+answer. A Mergify the job cannot reach counts as not answering, a misspelled
+`mergify_api_url` or a TLS error included, so read the step's warnings once
+you set it. Any other refusal, such as a refused application key, still
+fails the step. The Merge Queue waits for the pull request's scopes until
+the job runs again. The input needs mergify-cli 2026.11.20 or later and
+fails the step with an older one: if you pin `mergify_cli_version`, pin
+that version or a later one.
+
 ## Inputs
 
 <!-- AUTO-DOC-INPUT:START - Do not remove or modify this section -->
@@ -168,6 +195,7 @@ with `files` alone, list the files that impact every scope in
 | `mergify_config_path` | string | false |  | Path to the Mergify configuration file |
 | `report_path` | string | false |  | Path of the files to upload |
 | `scopes` | string | false |  | Comma separated list of scopes to upload (actions: scopes, scopes-upload). With action: scopes, they are added to the scopes detected from the changed files and sent in the same report, e.g. the scopes your build tool knows on top of the configuration file filters. Mergify adds them only if `scopes.source` declares `manual: null` beside `files`, and the Merge Queue then waits for the report of each pull request it queues. With `files` alone, Mergify ignores them and uses the file filters only. |
+| `skip_when_mergify_unavailable` | string | false | `false` | Warn and pass instead of failing the step when Mergify answers the scopes upload with a server error, a timeout or a throttle once the retries ran out, or does not answer (actions: scopes, scopes-upload). A Mergify the job cannot reach, a wrong `mergify_api_url` included, counts as not answering. Any other refusal still fails the step. For a required check that must stay green while Mergify is down: the Merge Queue waits for the pull request's scopes until the job runs again. Needs mergify-cli 2026.11.20 or later, and fails the step with an older one. |
 | `test_step_outcome` | string | false |  | Outcome of the test runner step (e.g. steps.<id>.outcome). Pass this to detect silent failures where the test runner crashed but the JUnit report appears clean. Values: 'success', 'failure', 'cancelled', 'skipped', or omit entirely. 'skipped' is treated the same as omitting this input. |
 | `token` | string | false |  | A Mergify application key granted CI Reporting, defaulting to the job's MERGIFY_TOKEN. Optional in a job granted `id-token: write`: without a key, the Mergify CLI trades the job's GitHub ID token for a Mergify token, if a trust policy of your organization allows the job. A key wins over the ID token. |
 

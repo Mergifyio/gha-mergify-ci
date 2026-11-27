@@ -53,6 +53,18 @@ inputs:
       `scopes`; with `files` alone, list such files in `barrier_files`
       instead.
     default: "false"
+  skip_when_mergify_unavailable:
+    description: |
+      Warn and pass instead of failing the step when Mergify answers the
+      scopes upload with a server error, a timeout or a throttle once the
+      retries ran out, or does not answer (actions: scopes, scopes-upload).
+      A Mergify the job cannot reach, a wrong `mergify_api_url` included,
+      counts as not answering. Any other refusal still fails the step. For
+      a required check that must stay green while Mergify is down: the
+      Merge Queue waits for the pull request's scopes until the job runs
+      again. Needs mergify-cli 2026.11.20 or later, and fails the step with
+      an older one.
+    default: "false"
   mergify_config_path:
     description: Path to the Mergify configuration file
   base:
@@ -232,6 +244,7 @@ runs:
         MERGIFY_API_URL: ${{ inputs.mergify_api_url }}
         MERGIFY_CONFIG_PATH: ${{ inputs.mergify_config_path }}
         ALL_SCOPES: ${{ inputs.all_scopes }}
+        SKIP_WHEN_MERGIFY_UNAVAILABLE: ${{ inputs.skip_when_mergify_unavailable }}
         ACTION: ${{ inputs.action }}
         SCOPES: ${{ inputs.scopes }}
       run: |
@@ -252,6 +265,15 @@ runs:
         fi
         if [ "$ALL_SCOPES" = "true" ]; then
           args+=(--all)
+        fi
+        if [ "$SKIP_WHEN_MERGIFY_UNAVAILABLE" = "true" ]; then
+          # Older CLIs reject the flag with a bare "unexpected argument".
+          help=$(mergify ci scopes-send --help 2>&1) || true
+          if ! grep -q -- --skip-when-mergify-unavailable <<< "$help"; then
+            echo "::error::skip_when_mergify_unavailable needs mergify-cli 2026.11.20 or later, this job installed $(mergify --version)"
+            exit 1
+          fi
+          args+=(--skip-when-mergify-unavailable)
         fi
         mergify ci scopes-send "${args[@]}"
 
