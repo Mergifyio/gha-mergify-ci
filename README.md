@@ -30,7 +30,7 @@ jobs:
 
 The job stores no Mergify key. The Mergify CLI the action runs trades the
 job's GitHub ID token for a Mergify token that works for one hour, on this
-repository only. If you pin `mergify_cli_version`, pin 2026.11.8 or later.
+repository only. If you pin `mergify_cli_version`, pin 2026.11.10 or later.
 
 A `permissions` block sets every permission it does not list to `none`, so
 list the ones your other steps need too. A job of a reusable workflow gets
@@ -39,12 +39,16 @@ list the ones your other steps need too. A job of a reusable workflow gets
 Mergify refuses the ID token until a trust policy of your organization
 covers the repository. A GitHub organization owner or a CI Admin writes
 one, as [OIDC Authentication](https://docs.mergify.com/integrations/gha/oidc/#write-a-trust-policy)
-shows. ID token authentication is in Preview.
+shows.
 
-When Mergify refuses the job a token, `junit-process` fails its step and the
-scopes upload is skipped with a warning saying why. On a public repository,
-GitHub gives runs for pull requests from forks no ID token: skip the upload
-there with
+When Mergify refuses the job a token, `junit-process` and the scopes upload
+send nothing and say so in a warning. `junit-process` then applies no
+quarantine, so any failing test fails its step, and sets its
+`test_results_upload` output to `rejected`.
+
+A job with neither a key nor an ID token fails `junit-process`. On a public
+repository, GitHub gives runs for pull requests from forks no ID token: skip
+the upload there with
 `if: (success() || failure()) && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository)`.
 
 Need help setting it up? See the [GitHub Actions setup guide](https://docs.mergify.com/ci-insights/setup/github-actions/) on the Mergify docs.
@@ -205,12 +209,12 @@ that version or a later one.
 
 | Output | Description |
 | --- | --- |
-| `test_results_upload` | Outcome of the JUnit test-results upload to Mergify Test Engine (action: junit-process): `success`, `rejected` (the API refused the upload, e.g. a key not granted CI Reporting, and recorded no test data) or `failed` (transient upload error). Empty when the junit-process step did not run or the installed mergify-cli predates this output. |
+| `test_results_upload` | Outcome of the JUnit test-results upload to Mergify Test Engine (action: junit-process): `success`, `rejected` or `failed`. `rejected`: Mergify refused the upload, e.g. from a key not granted CI Reporting, or the job's ID token got no Mergify token, e.g. when no trust policy of your organization allows the job. `failed`: a transient upload error. Empty when the junit-process step did not run or the installed mergify-cli predates this output. |
 | `scopes` | Stringified JSON mapping with names of all scopes matching any of the changed files |
 | `base` | The Merge Queue-aware base SHA of the pull request. On a merge queue batch built on other batches, scopes-git-refs and scopes-upload give the top of those batches, which the batch's scopes are detected from. From mergify-cli 2026.11.20, scopes gives the commit of the base branch below them instead, so that a diff from it holds every pull request that merges when the batch passes. |
 | `head` | The Merge Queue-aware head SHA of the pull request |
 
-A rejected upload does not fail the step — Mergify-side trouble must not break your CI. To surface dead ingest in your workflow, check the output explicitly:
+A rejected upload does not fail the step. To surface dead ingest in your workflow, check the output explicitly:
 
 ```yaml
 - uses: Mergifyio/gha-mergify-ci@v31
